@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>캠페인 만족도 조사</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg: #F1F5F0;
+    --surface: #FFFFFF;
+    --ink: #1E2A22;
+    --ink-soft: #52604F;
+    --muted: #8A9385;
+    --border: #DCE3D8;
+    --pine: #2F6F5E;
+    --pine-dark: #1F4C40;
+    --pine-tint: #E3EFEA;
+    --mustard: #C68A2E;
+    --mustard-tint: #FBF0DD;
+    --danger: #B4482F;
+    --radius: 14px;
+    --serif: 'Noto Serif KR', serif;
+    --sans: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  .wrap{ max-width: 640px; margin: 0 auto; padding: 0 20px 80px; }
+  header.top{
+    padding: 28px 20px 20px;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  header.top h1{
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: var(--pine-dark);
+  }
+  header.top p{ margin:0; color: var(--ink-soft); font-size: 14px; }
+
+  nav.tabs{
+    display:flex; gap: 6px; max-width: 640px; margin: 18px auto 0; padding: 0 20px;
+  }
+  nav.tabs button{
+    flex:0 0 auto;
+    padding: 9px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink-soft);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  nav.tabs button.active{
+    background: var(--pine);
+    border-color: var(--pine);
+    color: #fff;
+  }
+
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 16px;
+  }
+
+  .program-item{
+    display:flex; align-items:center; justify-content: space-between;
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-family: var(--sans);
+    text-align: left;
+    color: var(--ink);
+  }
+  .program-item:hover{ border-color: var(--pine); }
+  .program-item .name{ font-size: 16px; font-weight: 500; }
+  .program-item .arrow{ color: var(--pine); font-size: 18px; }
+
+  .empty{
+    color: var(--muted);
+    font-size: 14px;
+    padding: 30px 10px;
+    text-align: center;
+  }
+
+  .q-block{ margin-bottom: 26px; }
+  .q-block .q-text{ font-size: 15px; font-weight: 500; margin-bottom: 12px; }
+  .opt-grid{ display:flex; flex-direction:column; gap: 8px; }
+  .opt-grid.horizontal{
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .opt-grid.horizontal .opt-btn{
+    flex: 1 1 0;
+    min-width: 56px;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    padding: 12px 4px;
+  }
+  .opt-grid.horizontal .opt-btn span:last-child{
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .opt-grid.horizontal .opt-btn .dot{ margin: 0; }
+  select.q-survey-select{
+    width: 100%;
+    padding: 13px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    font-family: var(--sans);
+    background: #fff;
+    color: var(--ink);
+  }
+  textarea.q-survey-textarea{
+    width: 100%;
+    min-height: 90px;
+    padding: 13px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    font-family: var(--sans);
+    background: #fff;
+    color: var(--ink);
+    resize: vertical;
+  }
+  .opt-btn{
+    display:flex; align-items:center; gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .opt-btn .dot{
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 1.5px solid var(--border);
+    flex: 0 0 auto;
+  }
+  .opt-btn.selected{
+    border-color: var(--pine);
+    background: var(--pine-tint);
+    font-weight: 500;
+  }
+  .opt-btn.selected .dot{
+    border-color: var(--pine);
+    background: var(--pine);
+    box-shadow: inset 0 0 0 3px var(--pine-tint);
+  }
+
+  button.primary{
+    width: 100%;
+    padding: 15px;
+    border-radius: 10px;
+    border: none;
+    background: var(--pine);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  button.primary:disabled{ background: var(--muted); cursor: not-allowed; }
+  button.ghost{
+    width: 100%;
+    padding: 13px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: var(--sans);
+    font-size: 14px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  .back-link{
+    display:inline-block; margin-bottom: 14px; color: var(--pine-dark);
+    font-size: 14px; cursor: pointer; text-decoration: none;
+  }
+
+  .thankyou{ text-align:center; padding: 60px 20px; }
+  .thankyou .mark{
+    width:64px; height:64px; border-radius:50%; background: var(--pine-tint);
+    color: var(--pine); display:flex; align-items:center; justify-content:center;
+    font-size: 30px; margin: 0 auto 18px;
+  }
+  .thankyou h2{ font-family: var(--serif); font-size:20px; margin: 0 0 8px; }
+  .thankyou p{ color: var(--ink-soft); font-size: 14px; }
+
+  /* admin */
+  .lockbox{ max-width: 340px; margin: 60px auto; text-align:center; }
+  .lockbox input{
+    width: 100%; padding: 13px 14px; border-radius: 10px; border: 1px solid var(--border);
+    font-size: 15px; margin: 14px 0 10px; font-family: var(--sans);
+  }
+  .err-text{ color: var(--danger); font-size: 13px; min-height: 18px; }
+
+  .subtabs{ display:flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+  .subtabs button{
+    padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--ink-soft); font-size: 13px; cursor:pointer;
+    font-family: var(--sans);
+  }
+  .subtabs button.active{ background: var(--pine-dark); border-color: var(--pine-dark); color:#fff; }
+
+  .field-label{ font-size: 13px; color: var(--ink-soft); font-weight:500; margin: 14px 0 6px; }
+  input[type=text], textarea, select{
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+    font-size: 14px; font-family: var(--sans); background: #fff; color: var(--ink);
+  }
+  textarea{ resize: vertical; min-height: 44px; }
+
+  .row-item{
+    display:flex; align-items:center; justify-content: space-between; gap: 10px;
+    padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px;
+    background: var(--surface);
+  }
+  .row-item .title{ font-size: 14px; font-weight: 500; }
+  .row-item .sub{ font-size: 12px; color: var(--muted); margin-top:2px; }
+  .row-actions button{
+    border: none; background: none; cursor: pointer; font-size: 13px; padding: 6px 8px;
+    color: var(--ink-soft); font-family: var(--sans);
+  }
+  .row-actions button.danger{ color: var(--danger); }
+
+  .opt-tag-row{ display:flex; flex-wrap:wrap; gap:6px; margin: 8px 0; }
+  .opt-tag{
+    display:flex; align-items:center; gap:6px;
+    background: var(--mustard-tint); color: #7A5416;
+    padding: 5px 10px; border-radius: 999px; font-size: 12px;
+  }
+  .opt-tag button{ border:none; background:none; cursor:pointer; color:#7A5416; font-size:13px; padding:0; }
+
+  .stat-card{ background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+  .stat-num{ font-size: 30px; font-weight:700; font-family: var(--serif); color: var(--pine-dark); }
+  .stat-label{ font-size:13px; color: var(--muted); }
+
+  .qr-box{ text-align:center; margin-top: 10px; }
+  .qr-box img{ width: 160px; height:160px; border:1px solid var(--border); border-radius: 10px; padding:8px; background:#fff; }
+  .link-box{
+    display:flex; gap:8px; margin-top:10px;
+  }
+  .link-box input{ flex:1; }
+  .link-box button{ padding: 0 14px; border-radius:8px; border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:13px; }
+
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1 id="site-title">캠페인 만족도 조사</h1>
+  <p id="site-sub">참여해 주셔서 감사합니다. 프로그램을 선택하고 문항에 답해주세요.</p>
+</header>
+
+<nav class="tabs">
+  <button id="tab-public" class="active" onclick="switchMainTab('public')">설문조사</button>
+  <button id="tab-admin" onclick="switchMainTab('admin')">관리자</button>
+</nav>
+
+<div class="wrap">
+
+  <!-- PUBLIC: program list -->
+  <section id="view-list">
+    <div id="program-list"></div>
+  </section>
+
+  <!-- PUBLIC: survey -->
+  <section id="view-survey" class="hidden">
+    <span class="back-link" onclick="goToList()">‹ 프로그램 목록으로</span>
+    <div class="card">
+      <h2 id="survey-title" style="font-family:var(--serif); font-size:18px; margin:0 0 4px;"></h2>
+      <p style="color:var(--ink-soft); font-size:13px; margin:0 0 18px;">모든 문항에 답한 후 제출해주세요.</p>
+      <div id="question-list"></div>
+      <div id="submit-error" class="err-text"></div>
+      <button class="primary" id="submit-btn" onclick="submitResponse()">제출하기</button>
+    </div>
+  </section>
+
+  <!-- PUBLIC: thank you -->
+  <section id="view-thanks" class="hidden">
+    <div class="thankyou">
+      <div class="mark">✓</div>
+      <h2>응답이 저장되었습니다</h2>
+      <p>소중한 의견 감사합니다.</p>
+      <button class="ghost" onclick="goToList()" style="max-width:220px; margin:20px auto 0;">다른 프로그램 응답하기</button>
+    </div>
+  </section>
+
+  <!-- ADMIN: lock -->
+  <section id="view-admin-lock" class="hidden">
+    <div class="lockbox">
+      <p style="font-size:14px; color:var(--ink-soft);">관리자 비밀번호를 입력하세요</p>
+      <input type="password" id="admin-pw-input" placeholder="비밀번호">
+      <div class="err-text" id="admin-pw-err"></div>
+      <button class="primary" onclick="tryAdminLogin()">입장</button>
+    </div>
+  </section>
+
+  <!-- ADMIN: dashboard -->
+  <section id="view-admin" class="hidden">
+    <div class="subtabs">
+      <button id="sub-programs" class="active" onclick="switchAdminTab('programs')">프로그램 관리</button>
+      <button id="sub-questions" onclick="switchAdminTab('questions')">문항 관리</button>
+      <button id="sub-results" onclick="switchAdminTab('results')">결과 통계</button>
+      <button id="sub-share" onclick="switchAdminTab('share')">공유 (QR/링크)</button>
+      <button id="sub-trash" onclick="switchAdminTab('trash')">휴지통</button>
+    </div>
+
+    <!-- Programs tab -->
+    <div id="admin-programs">
+      <div class="card">
+        <div class="field-label">새 프로그램 추가</div>
+        <input type="text" id="new-program-name" placeholder="프로그램명 (예: 다정한 말 한마디 릴레이)">
+        <button class="primary" onclick="addProgram()">프로그램 추가</button>
+      </div>
+      <div id="program-manage-list"></div>
+    </div>
+
+    <!-- Questions tab -->
+    <div id="admin-questions" class="hidden">
+      <div class="card">
+        <div class="field-label">대상 프로그램</div>
+        <select id="q-program-select" onchange="renderQuestionManageList()"></select>
+
+        <div class="field-label" id="q-form-title">새 문항 내용</div>
+        <textarea id="new-q-text" placeholder="예: 프로그램 전반에 대해 만족하십니까?"></textarea>
+
+        <div class="field-label">답변 형식</div>
+        <div class="subtabs" id="display-type-toggle">
+          <button type="button" class="toggle-opt active" data-val="buttons" onclick="setDisplayType('buttons')">펼쳐서 클릭</button>
+          <button type="button" class="toggle-opt" data-val="dropdown" onclick="setDisplayType('dropdown')">드롭다운</button>
+          <button type="button" class="toggle-opt" data-val="text" onclick="setDisplayType('text')">주관식(텍스트)</button>
+        </div>
+
+        <div id="options-section-wrap">
+          <div class="field-label">보기 항목 (직접 추가)</div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="new-q-option" placeholder="보기 텍스트 입력 후 추가" style="flex:1;">
+            <button class="ghost" style="width:auto; margin:0; white-space:nowrap;" onclick="addOptionDraft()">추가</button>
+          </div>
+          <div class="opt-tag-row" id="option-draft-list"></div>
+          <button class="ghost" style="margin-top:6px;" onclick="fillDefaultOptions()">기본 5점 척도로 채우기</button>
+
+          <div id="layout-toggle-wrap">
+            <div class="field-label">배열 방향</div>
+            <div class="subtabs" id="layout-toggle">
+              <button type="button" class="toggle-opt active" data-val="vertical" onclick="setLayout('vertical')">세로</button>
+              <button type="button" class="toggle-opt" data-val="horizontal" onclick="setLayout('horizontal')">가로</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="primary" id="q-submit-btn" onclick="addQuestion()">문항 추가</button>
+        <button class="ghost hidden" id="q-cancel-btn" onclick="cancelEditQuestion()">수정 취소</button>
+      </div>
+      <div id="question-manage-list"></div>
+    </div>
+
+    <!-- Results tab -->
+    <div id="admin-results" class="hidden">
+      <div class="card">
+        <div class="field-label">프로그램 선택</div>
+        <select id="r-program-select" onchange="renderResults()"></select>
+        <button class="ghost" id="export-excel-btn" style="margin-top:10px;" onclick="exportResultsToExcel()">엑셀로 다운로드</button>
+      </div>
+      <div id="results-summary"></div>
+      <div id="results-charts"></div>
+      <div id="results-responses"></div>
+    </div>
+
+    <!-- Share tab -->
+    <div id="admin-share" class="hidden">
+      <div class="card">
+        <div class="field-label">설문 참여 주소</div>
+        <div class="link-box">
+          <input type="text" id="share-url" readonly>
+          <button onclick="copyShareUrl()">복사</button>
+        </div>
+        <div class="qr-box">
+          <img id="qr-img" alt="QR 코드">
+          <p style="font-size:12px; color:var(--muted); margin-top:8px;">QR을 스캔하면 바로 설문 화면으로 이동합니다.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trash tab -->
+    <div id="admin-trash" class="hidden">
+      <p style="font-size:13px; color:var(--ink-soft); margin:0 0 14px;">삭제한 프로그램, 문항, 응답이 여기에 보관됩니다. 복구하거나 완전히 삭제할 수 있어요.</p>
+      <div id="trash-list"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* =========================================================
+   1) FIREBASE 설정 — Firebase 콘솔에서 발급받은 값으로 교체하세요
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyC62cMm8vpTVObCs3XzGYSJuhi9ydyrukU",
+  authDomain: "campaign-survey-2026.firebaseapp.com",
+  projectId: "campaign-survey-2026",
+  storageBucket: "campaign-survey-2026.firebasestorage.app",
+  messagingSenderId: "999305256213",
+  appId: "1:999305256213:web:ecb60958603f41757f1d1c"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* =========================================================
+   2) 관리자 비밀번호 — 원하는 값으로 교체하세요
+   ========================================================= */
+const ADMIN_PASSWORD = "bono9002";
+
+/* ========================================================= */
+
+let programs = [];
+let questions = [];
+let currentProgram = null;
+let currentAnswers = {};
+let isAdminUnlocked = sessionStorage.getItem('surveyAdminUnlocked') === '1';
+
+function switchMainTab(tab){
+  document.getElementById('tab-public').classList.toggle('active', tab==='public');
+  document.getElementById('tab-admin').classList.toggle('active', tab==='admin');
+  document.getElementById('view-list').classList.toggle('hidden', tab!=='public');
+  document.getElementById('view-survey').classList.add('hidden');
+  document.getElementById('view-thanks').classList.add('hidden');
+  document.getElementById('view-admin-lock').classList.add('hidden');
+  document.getElementById('view-admin').classList.add('hidden');
+
+  if(tab==='admin'){
+    if(isAdminUnlocked){
+      document.getElementById('view-admin').classList.remove('hidden');
+      loadAdminData();
+    } else {
+      document.getElementById('view-admin-lock').classList.remove('hidden');
+    }
+  }
+}
+
+function tryAdminLogin(){
+  const val = document.getElementById('admin-pw-input').value;
+  if(val === ADMIN_PASSWORD){
+    isAdminUnlocked = true;
+    sessionStorage.setItem('surveyAdminUnlocked','1');
+    document.getElementById('view-admin-lock').classList.add('hidden');
+    document.getElementById('view-admin').classList.remove('hidden');
+    loadAdminData();
+  } else {
+    document.getElementById('admin-pw-err').textContent = '비밀번호가 올바르지 않습니다.';
+  }
+}
+
+/* ---------------- PUBLIC: program list ---------------- */
+function loadPrograms(){
+  db.collection('programs').orderBy('order','asc').onSnapshot(snap=>{
+    const all = [];
+    snap.forEach(doc=> all.push({id:doc.id, ...doc.data()}));
+    window.__allPrograms = all;
+    programs = all.filter(p=>!p.deletedAt);
+    renderProgramList();
+    if(document.getElementById('q-program-select')) populateProgramSelects();
+  });
+}
+
+function renderProgramList(){
+  const el = document.getElementById('program-list');
+  if(programs.length===0){
+    el.innerHTML = '<div class="empty">아직 등록된 프로그램이 없습니다.</div>';
+    return;
+  }
+  el.innerHTML = programs.map(p=>`
+    <button class="program-item" onclick="openProgram('${p.id}')">
+      <span class="name">${escapeHtml(p.name)}</span>
+      <span class="arrow">›</span>
+    </button>
+  `).join('');
+}
+
+function openProgram(programId){
+  currentProgram = programs.find(p=>p.id===programId);
+  currentAnswers = {};
+  document.getElementById('view-list').classList.add('hidden');
+  document.getElementById('view-survey').classList.remove('hidden');
+  document.getElementById('survey-title').textContent = currentProgram.name;
+  document.getElementById('submit-error').textContent = '';
+
+  db.collection('questions').where('programId','==', programId).get().then(snap=>{
+    const qs = [];
+    snap.forEach(doc=> qs.push({id:doc.id, ...doc.data()}));
+    const activeQs = qs.filter(q=>!q.deletedAt);
+    activeQs.sort((a,b)=> (a.order||0) - (b.order||0));
+    renderQuestions(activeQs);
+  }).catch(err=>{
+    console.error(err);
+    document.getElementById('question-list').innerHTML = '<div class="empty">문항을 불러오지 못했습니다. 콘솔 오류를 확인해주세요.</div>';
+  });
+}
+
+function renderQuestions(qs){
+  const el = document.getElementById('question-list');
+  if(qs.length===0){
+    el.innerHTML = '<div class="empty">이 프로그램에는 아직 등록된 문항이 없습니다.</div>';
+    document.getElementById('submit-btn').disabled = true;
+    return;
+  }
+  document.getElementById('submit-btn').disabled = false;
+  el.innerHTML = qs.map(q=>{
+    const displayType = q.displayType || 'buttons';
+    const layout = q.layout || 'vertical';
+    if(displayType === 'dropdown'){
+      return `
+        <div class="q-block" data-qid="${q.id}">
+          <div class="q-text">${escapeHtml(q.text)}</div>
+          <select class="q-survey-select" onchange="selectDropdownAnswer('${q.id}', this.value)">
+            <option value="" disabled selected>선택하세요</option>
+            ${q.options.map(opt=>`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`).join('')}
+          </select>
+        </div>
+      `;
+    }
+    if(displayType === 'text'){
+      return `
+        <div class="q-block" data-qid="${q.id}">
+          <div class="q-text">${escapeHtml(q.text)}</div>
+          <textarea class="q-survey-textarea" placeholder="답변을 입력해주세요" oninput="selectTextAnswer('${q.id}', this.value)"></textarea>
+        </div>
+      `;
+    }
+    return `
+      <div class="q-block" data-qid="${q.id}">
+        <div class="q-text">${escapeHtml(q.text)}</div>
+        <div class="opt-grid ${layout==='horizontal' ? 'horizontal' : ''}">
+          ${q.options.map(opt=>`
+            <button type="button" class="opt-btn" data-qid="${q.id}" data-opt="${escapeHtml(opt)}" onclick="selectOption('${q.id}', this)">
+              <span class="dot"></span><span>${escapeHtml(opt)}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+  window.__currentQuestions = qs;
+}
+
+function selectDropdownAnswer(qid, value){
+  currentAnswers[qid] = value;
+  document.getElementById('submit-error').textContent = '';
+}
+
+function selectTextAnswer(qid, value){
+  const trimmed = value.trim();
+  if(trimmed){ currentAnswers[qid] = trimmed; } else { delete currentAnswers[qid]; }
+  document.getElementById('submit-error').textContent = '';
+}
+
+function selectOption(qid, btn){
+  const container = btn.closest('.q-block');
+  container.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  currentAnswers[qid] = btn.getAttribute('data-opt');
+  document.getElementById('submit-error').textContent = '';
+}
+
+function goToList(){
+  document.getElementById('view-survey').classList.add('hidden');
+  document.getElementById('view-thanks').classList.add('hidden');
+  document.getElementById('view-list').classList.remove('hidden');
+  currentProgram = null;
+  currentAnswers = {};
+}
+
+function submitResponse(){
+  const qs = window.__currentQuestions || [];
+  const missing = qs.filter(q=> !currentAnswers[q.id]);
+  if(missing.length>0){
+    document.getElementById('submit-error').textContent = '모든 문항에 답해주세요.';
+    return;
+  }
+  const answers = qs.map(q=>({
+    questionId: q.id,
+    questionText: q.text,
+    answer: currentAnswers[q.id]
+  }));
+  db.collection('responses').add({
+    programId: currentProgram.id,
+    programName: currentProgram.name,
+    answers: answers,
+    submittedAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{
+    document.getElementById('view-survey').classList.add('hidden');
+    document.getElementById('view-thanks').classList.remove('hidden');
+  }).catch(err=>{
+    document.getElementById('submit-error').textContent = '저장 중 오류가 발생했습니다. 다시 시도해주세요.';
+    console.error(err);
+  });
+}
+
+/* ---------------- ADMIN: shared ---------------- */
+function switchAdminTab(tab){
+  ['programs','questions','results','share','trash'].forEach(t=>{
+    document.getElementById('sub-'+t).classList.toggle('active', t===tab);
+    document.getElementById('admin-'+t).classList.toggle('hidden', t!==tab);
+  });
+  if(tab==='questions') renderQuestionManageList();
+  if(tab==='results') renderResults();
+  if(tab==='share') renderShare();
+  if(tab==='trash') renderTrash();
+}
+
+function loadAdminData(){
+  populateProgramSelects();
+  renderProgramManageList();
+}
+
+function populateProgramSelects(){
+  const qSel = document.getElementById('q-program-select');
+  const rSel = document.getElementById('r-program-select');
+  if(!qSel) return;
+  const opts = programs.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  const prevQ = qSel.value, prevR = rSel.value;
+  qSel.innerHTML = opts || '<option value="">등록된 프로그램 없음</option>';
+  rSel.innerHTML = opts || '<option value="">등록된 프로그램 없음</option>';
+  if(programs.some(p=>p.id===prevQ)) qSel.value = prevQ;
+  if(programs.some(p=>p.id===prevR)) rSel.value = prevR;
+}
+
+/* ---------------- ADMIN: programs ---------------- */
+function addProgram(){
+  const input = document.getElementById('new-program-name');
+  const name = input.value.trim();
+  if(!name) return;
+  db.collection('programs').add({
+    name: name,
+    order: programs.length,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).then(()=>{ input.value=''; });
+}
+
+function renderProgramManageList(){
+  const el = document.getElementById('program-manage-list');
+  if(programs.length===0){ el.innerHTML=''; return; }
+  el.innerHTML = programs.map(p=>`
+    <div class="row-item">
+      <div>
+        <div class="title">${escapeHtml(p.name)}</div>
+      </div>
+      <div class="row-actions">
+        <button onclick="renameProgram('${p.id}','${escapeAttr(p.name)}')">이름 수정</button>
+        <button class="danger" onclick="deleteProgram('${p.id}')">삭제</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renameProgram(id, oldName){
+  const name = prompt('새 프로그램명을 입력하세요', oldName);
+  if(name && name.trim()){
+    db.collection('programs').doc(id).update({ name: name.trim() });
+  }
+}
+
+function deleteProgram(id){
+  if(!confirm('프로그램을 휴지통으로 이동할까요? 관련 문항도 함께 휴지통으로 이동됩니다. (휴지통에서 복구 가능)')) return;
+  db.collection('questions').where('programId','==', id).get().then(snap=>{
+    const batch = db.batch();
+    const now = firebase.firestore.FieldValue.serverTimestamp();
+    snap.forEach(doc=>{
+      if(!doc.data().deletedAt) batch.update(doc.ref, { deletedAt: now });
+    });
+    batch.update(db.collection('programs').doc(id), { deletedAt: now });
+    return batch.commit();
+  });
+}
+
+/* ---------------- ADMIN: questions ---------------- */
+let optionDraft = [];
+let editingQuestionId = null;
+let questionDisplayType = 'buttons';
+let questionLayout = 'vertical';
+
+function setDisplayType(val){
+  questionDisplayType = val;
+  updateToggleUI();
+}
+function setLayout(val){
+  questionLayout = val;
+  updateToggleUI();
+}
+function updateToggleUI(){
+  document.querySelectorAll('#display-type-toggle button').forEach(b=>
+    b.classList.toggle('active', b.getAttribute('data-val')===questionDisplayType));
+  document.querySelectorAll('#layout-toggle button').forEach(b=>
+    b.classList.toggle('active', b.getAttribute('data-val')===questionLayout));
+  document.getElementById('layout-toggle-wrap').classList.toggle('hidden', questionDisplayType!=='buttons');
+  document.getElementById('options-section-wrap').classList.toggle('hidden', questionDisplayType==='text');
+}
+
+function addOptionDraft(){
+  const input = document.getElementById('new-q-option');
+  const val = input.value.trim();
+  if(!val) return;
+  optionDraft.push(val);
+  input.value = '';
+  renderOptionDraft();
+}
+
+function removeOptionDraft(idx){
+  optionDraft.splice(idx,1);
+  renderOptionDraft();
+}
+
+function renderOptionDraft(){
+  document.getElementById('option-draft-list').innerHTML = optionDraft.map((o,i)=>`
+    <span class="opt-tag">${escapeHtml(o)}<button onclick="removeOptionDraft(${i})">×</button></span>
+  `).join('');
+}
+
+function fillDefaultOptions(){
+  optionDraft = ['매우 만족','만족','보통','불만족','매우 불만족'];
+  renderOptionDraft();
+}
+
+function startEditQuestion(q){
+  editingQuestionId = q.id;
+  document.getElementById('new-q-text').value = q.text;
+  optionDraft = q.options.slice();
+  renderOptionDraft();
+  questionDisplayType = q.displayType || 'buttons';
+  questionLayout = q.layout || 'vertical';
+  updateToggleUI();
+  document.getElementById('q-form-title').textContent = '문항 수정 중';
+  document.getElementById('q-submit-btn').textContent = '수정 저장';
+  document.getElementById('q-cancel-btn').classList.remove('hidden');
+  document.getElementById('new-q-text').scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function cancelEditQuestion(){
+  editingQuestionId = null;
+  document.getElementById('new-q-text').value = '';
+  optionDraft = [];
+  renderOptionDraft();
+  questionDisplayType = 'buttons';
+  questionLayout = 'vertical';
+  updateToggleUI();
+  document.getElementById('q-form-title').textContent = '새 문항 내용';
+  document.getElementById('q-submit-btn').textContent = '문항 추가';
+  document.getElementById('q-cancel-btn').classList.add('hidden');
+}
+
+function addQuestion(){
+  const programId = document.getElementById('q-program-select').value;
+  const text = document.getElementById('new-q-text').value.trim();
+  if(!programId){ alert('먼저 프로그램을 추가하고 선택해주세요.'); return; }
+  if(!text){ alert('문항 내용을 입력해주세요.'); return; }
+  if(questionDisplayType !== 'text' && optionDraft.length < 2){ alert('보기 항목을 2개 이상 추가해주세요.'); return; }
+  const finalOptions = questionDisplayType === 'text' ? [] : optionDraft.slice();
+
+  if(editingQuestionId){
+    db.collection('questions').doc(editingQuestionId).update({
+      text, options: finalOptions,
+      displayType: questionDisplayType, layout: questionLayout
+    }).then(()=>{
+      cancelEditQuestion();
+    });
+    return;
+  }
+
+  db.collection('questions').where('programId','==', programId).get().then(snap=>{
+    const activeCount = snap.docs.filter(d=>!d.data().deletedAt).length;
+    return db.collection('questions').add({
+      programId, text, options: finalOptions, order: activeCount,
+      displayType: questionDisplayType, layout: questionLayout,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }).then(()=>{
+    document.getElementById('new-q-text').value = '';
+    optionDraft = [];
+    renderOptionDraft();
+    questionDisplayType = 'buttons';
+    questionLayout = 'vertical';
+    updateToggleUI();
+    renderQuestionManageList();
+  });
+}
+
+function moveQuestion(programId, qid, direction){
+  db.collection('questions').where('programId','==', programId).get().then(snap=>{
+    const qs = [];
+    snap.forEach(doc=> qs.push({id:doc.id, ...doc.data()}));
+    const activeQs = qs.filter(q=>!q.deletedAt);
+    activeQs.sort((a,b)=> (a.order||0) - (b.order||0));
+    const idx = activeQs.findIndex(q=>q.id===qid);
+    const swapIdx = direction==='up' ? idx-1 : idx+1;
+    if(idx<0 || swapIdx<0 || swapIdx>=activeQs.length) return;
+    const a = activeQs[idx], b = activeQs[swapIdx];
+    const orderA = a.order||0, orderB = b.order||0;
+    const batch = db.batch();
+    batch.update(db.collection('questions').doc(a.id), { order: orderB });
+    batch.update(db.collection('questions').doc(b.id), { order: orderA });
+    return batch.commit();
+  });
+}
+
+function renderQuestionManageList(){
+  const programId = document.getElementById('q-program-select').value;
+  const el = document.getElementById('question-manage-list');
+  if(!programId){ el.innerHTML=''; return; }
+  db.collection('questions').where('programId','==', programId).onSnapshot(snap=>{
+    const all = [];
+    snap.forEach(doc=> all.push({id:doc.id, ...doc.data()}));
+    const qs = all.filter(q=>!q.deletedAt);
+    qs.sort((a,b)=> (a.order||0) - (b.order||0));
+    window.__adminQuestions = qs;
+    if(qs.length===0){ el.innerHTML = '<div class="empty">등록된 문항이 없습니다.</div>'; return; }
+    el.innerHTML = qs.map((q,i)=>`
+      <div class="row-item" style="flex-direction:column; align-items:flex-start;">
+        <div style="display:flex; width:100%; justify-content:space-between;">
+          <div class="title">${i+1}. ${escapeHtml(q.text)}</div>
+          <div class="row-actions" style="display:flex; align-items:center; gap:2px;">
+            <button onclick="moveQuestion('${programId}','${q.id}','up')" ${i===0?'disabled style="opacity:.3;"':''} title="위로">▲</button>
+            <button onclick="moveQuestion('${programId}','${q.id}','down')" ${i===qs.length-1?'disabled style="opacity:.3;"':''} title="아래로">▼</button>
+            <button onclick='startEditQuestion(${JSON.stringify(q).replace(/'/g, "&#39;")})'>수정</button>
+            <button onclick="deleteQuestion('${q.id}')" class="danger">삭제</button>
+          </div>
+        </div>
+        ${q.displayType==='text' ? '' : `<div class="sub">보기: ${q.options.map(escapeHtml).join(' / ')}</div>`}
+        <div class="sub">표시: ${q.displayType==='text' ? '주관식(텍스트)' : q.displayType==='dropdown' ? '드롭다운' : (q.layout==='horizontal' ? '펼쳐서 클릭 · 가로' : '펼쳐서 클릭 · 세로')}</div>
+      </div>
+    `).join('');
+  }, err=>{
+    console.error(err);
+    el.innerHTML = '<div class="empty">문항을 불러오지 못했습니다. 콘솔 오류를 확인해주세요.</div>';
+  });
+}
+
+function deleteQuestion(id){
+  if(!confirm('문항을 휴지통으로 이동할까요? (휴지통에서 복구 가능)')) return;
+  db.collection('questions').doc(id).update({ deletedAt: firebase.firestore.FieldValue.serverTimestamp() });
+}
+
+/* ---------------- ADMIN: results ---------------- */
+let chartInstances = [];
+
+function renderResults(){
+  const programId = document.getElementById('r-program-select').value;
+  const summaryEl = document.getElementById('results-summary');
+  const chartsEl = document.getElementById('results-charts');
+  const responsesEl = document.getElementById('results-responses');
+  chartInstances.forEach(c=>c.destroy());
+  chartInstances = [];
+  if(!programId){ summaryEl.innerHTML=''; chartsEl.innerHTML=''; responsesEl.innerHTML=''; return; }
+
+  Promise.all([
+    db.collection('questions').where('programId','==', programId).get(),
+    db.collection('responses').where('programId','==', programId).get()
+  ]).then(([qSnap, rSnap])=>{
+    const qsAll = []; qSnap.forEach(d=> qsAll.push({id:d.id, ...d.data()}));
+    const qs = qsAll.filter(q=>!q.deletedAt);
+    qs.sort((a,b)=> (a.order||0) - (b.order||0));
+    const rAll = []; rSnap.forEach(d=> rAll.push({id:d.id, ...d.data()}));
+    const responses = rAll.filter(r=>!r.deletedAt);
+    responses.sort((a,b)=>{
+      const ta = a.submittedAt && a.submittedAt.toMillis ? a.submittedAt.toMillis() : 0;
+      const tb = b.submittedAt && b.submittedAt.toMillis ? b.submittedAt.toMillis() : 0;
+      return tb - ta;
+    });
+
+    window.__resultsQuestions = qs;
+    window.__resultsResponses = responses;
+    window.__resultsProgramName = (programs.find(p=>p.id===programId)||{}).name || '';
+
+    summaryEl.innerHTML = `
+      <div class="stat-card">
+        <div class="stat-num">${responses.length}</div>
+        <div class="stat-label">총 응답 수</div>
+      </div>
+    `;
+
+    if(qs.length===0 || responses.length===0){
+      chartsEl.innerHTML = '<div class="empty">아직 표시할 결과가 없습니다.</div>';
+      responsesEl.innerHTML = '';
+      return;
+    }
+
+    chartsEl.innerHTML = qs.map(q=>{
+      if(q.displayType === 'text'){
+        const textAnswers = responses
+          .map(r=> r.answers.find(a=>a.questionId===q.id))
+          .filter(a=> a && a.answer);
+        return `
+          <div class="stat-card">
+            <div style="font-size:14px; font-weight:500; margin-bottom:10px;">${escapeHtml(q.text)} <span style="color:var(--muted); font-weight:400;">(주관식 · 응답 ${textAnswers.length}건)</span></div>
+            ${textAnswers.length===0 ? '<div class="empty">아직 응답이 없습니다.</div>' : textAnswers.map(a=>`
+              <div style="font-size:13px; padding:8px 0; border-top:1px solid var(--border);">${escapeHtml(a.answer)}</div>
+            `).join('')}
+          </div>
+        `;
+      }
+      return `
+      <div class="stat-card">
+        <div style="font-size:14px; font-weight:500; margin-bottom:10px;">${escapeHtml(q.text)}</div>
+        <canvas id="chart-${q.id}" height="140"></canvas>
+      </div>
+    `;
+    }).join('');
+
+    qs.filter(q=> q.displayType !== 'text').forEach(q=>{
+      const counts = q.options.map(opt=>
+        responses.filter(r=> r.answers.some(a=> a.questionId===q.id && a.answer===opt)).length
+      );
+      const ctx = document.getElementById('chart-'+q.id).getContext('2d');
+      const chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: q.options,
+          datasets: [{ data: counts, backgroundColor: '#2F6F5E', borderRadius: 6 }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        }
+      });
+      chartInstances.push(chart);
+    });
+
+    renderIndividualResponses();
+  }).catch(err=>{
+    console.error(err);
+    chartsEl.innerHTML = '<div class="empty">결과를 불러오지 못했습니다. 콘솔 오류를 확인해주세요.</div>';
+  });
+}
+
+function formatTimestamp(ts){
+  if(!ts || !ts.toDate) return '-';
+  const d = ts.toDate();
+  const pad = n=> String(n).padStart(2,'0');
+  return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function renderIndividualResponses(){
+  const el = document.getElementById('results-responses');
+  const responses = window.__resultsResponses || [];
+  if(responses.length===0){ el.innerHTML=''; return; }
+
+  el.innerHTML = `
+    <div class="field-label" style="margin-top:20px;">개별 응답 (${responses.length}건)</div>
+    ${responses.map(r=>`
+      <div class="row-item" style="flex-direction:column; align-items:flex-start;">
+        <div style="display:flex; width:100%; justify-content:space-between; align-items:center;">
+          <div class="sub">${formatTimestamp(r.submittedAt)}</div>
+          <div class="row-actions">
+            <button class="danger" onclick="deleteResponse('${r.id}')">삭제</button>
+          </div>
+        </div>
+        <div style="margin-top:8px; width:100%;">
+          ${r.answers.map(a=>`
+            <div style="font-size:13px; padding:4px 0; border-top:1px solid var(--border);">
+              <span style="color:var(--ink-soft);">${escapeHtml(a.questionText)}</span> —
+              <span style="font-weight:500;">${escapeHtml(a.answer)}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function deleteResponse(responseId){
+  if(!confirm('이 응답을 휴지통으로 이동할까요? (휴지통에서 복구 가능)')) return;
+  db.collection('responses').doc(responseId).update({ deletedAt: firebase.firestore.FieldValue.serverTimestamp() }).then(()=>{
+    renderResults();
+  });
+}
+
+function exportResultsToExcel(){
+  const qs = window.__resultsQuestions || [];
+  const responses = window.__resultsResponses || [];
+  const programName = window.__resultsProgramName || '프로그램';
+
+  if(qs.length===0 || responses.length===0){
+    alert('내보낼 결과가 없습니다.');
+    return;
+  }
+
+  // Sheet 1: 문항별 보기 분포 (주관식 문항은 개별 응답 시트에서 확인)
+  const summaryRows = [['문항','보기','응답 수']];
+  qs.filter(q=> q.displayType !== 'text').forEach(q=>{
+    q.options.forEach(opt=>{
+      const count = responses.filter(r=> r.answers.some(a=> a.questionId===q.id && a.answer===opt)).length;
+      summaryRows.push([q.text, opt, count]);
+    });
+  });
+
+  // Sheet 2: 응답별 원자료 (행 = 응답 1건, 열 = 문항)
+  const header = ['제출일시', ...qs.map(q=>q.text)];
+  const rawRows = [header];
+  responses.forEach(r=>{
+    const row = [formatTimestamp(r.submittedAt)];
+    qs.forEach(q=>{
+      const ans = r.answers.find(a=>a.questionId===q.id);
+      row.push(ans ? ans.answer : '');
+    });
+    rawRows.push(row);
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.aoa_to_sheet(summaryRows);
+  const ws2 = XLSX.utils.aoa_to_sheet(rawRows);
+  XLSX.utils.book_append_sheet(wb, ws1, '통계 요약');
+  XLSX.utils.book_append_sheet(wb, ws2, '개별 응답');
+
+  const fileName = `${programName}_만족도결과.xlsx`;
+  XLSX.writeFile(wb, fileName);
+}
+
+/* ---------------- ADMIN: share ---------------- */
+function renderShare(){
+  const url = window.location.origin + window.location.pathname;
+  document.getElementById('share-url').value = url;
+  document.getElementById('qr-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
+}
+
+function copyShareUrl(){
+  const input = document.getElementById('share-url');
+  input.select();
+  document.execCommand('copy');
+}
+
+/* ---------------- ADMIN: trash ---------------- */
+function renderTrash(){
+  const el = document.getElementById('trash-list');
+  el.innerHTML = '<div class="empty">불러오는 중...</div>';
+
+  Promise.all([
+    db.collection('programs').get(),
+    db.collection('questions').get(),
+    db.collection('responses').get()
+  ]).then(([pSnap, qSnap, rSnap])=>{
+    const items = [];
+    pSnap.forEach(d=>{
+      const data = d.data();
+      if(data.deletedAt) items.push({ type:'program', id:d.id, label: data.name, deletedAt: data.deletedAt });
+    });
+    qSnap.forEach(d=>{
+      const data = d.data();
+      if(data.deletedAt){
+        const progName = (window.__allPrograms||[]).find(p=>p.id===data.programId);
+        items.push({ type:'question', id:d.id, label: data.text, sub: progName ? `[${progName.name}]` : '', deletedAt: data.deletedAt });
+      }
+    });
+    rSnap.forEach(d=>{
+      const data = d.data();
+      if(data.deletedAt) items.push({ type:'response', id:d.id, label: `${data.programName||'응답'} · ${formatTimestamp(data.submittedAt)} 제출`, deletedAt: data.deletedAt });
+    });
+
+    items.sort((a,b)=>{
+      const ta = a.deletedAt && a.deletedAt.toMillis ? a.deletedAt.toMillis() : 0;
+      const tb = b.deletedAt && b.deletedAt.toMillis ? b.deletedAt.toMillis() : 0;
+      return tb - ta;
+    });
+
+    if(items.length===0){ el.innerHTML = '<div class="empty">휴지통이 비어 있습니다.</div>'; return; }
+
+    const typeLabel = { program:'프로그램', question:'문항', response:'응답' };
+    el.innerHTML = items.map(it=>`
+      <div class="row-item">
+        <div>
+          <div class="title">[${typeLabel[it.type]}] ${escapeHtml(it.label)} ${it.sub?escapeHtml(it.sub):''}</div>
+          <div class="sub">삭제일: ${formatTimestamp(it.deletedAt)}</div>
+        </div>
+        <div class="row-actions">
+          <button onclick="restoreTrashItem('${it.type}','${it.id}')">복구</button>
+          <button class="danger" onclick="permanentlyDeleteTrashItem('${it.type}','${it.id}')">완전삭제</button>
+        </div>
+      </div>
+    `).join('');
+  }).catch(err=>{
+    console.error(err);
+    el.innerHTML = '<div class="empty">휴지통을 불러오지 못했습니다. 콘솔 오류를 확인해주세요.</div>';
+  });
+}
+
+function restoreTrashItem(type, id){
+  const coll = type==='program' ? 'programs' : type==='question' ? 'questions' : 'responses';
+  db.collection(coll).doc(id).update({
+    deletedAt: firebase.firestore.FieldValue.delete()
+  }).then(()=>{
+    renderTrash();
+  });
+}
+
+function permanentlyDeleteTrashItem(type, id){
+  if(!confirm('완전히 삭제하면 복구할 수 없습니다. 계속할까요?')) return;
+  const coll = type==='program' ? 'programs' : type==='question' ? 'questions' : 'responses';
+  db.collection(coll).doc(id).delete().then(()=>{
+    renderTrash();
+  });
+}
+
+/* ---------------- utils ---------------- */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+function escapeAttr(str){
+  return String(str).replace(/'/g, "\\'");
+}
+
+/* ---------------- init ---------------- */
+loadPrograms();
+</script>
+</body>
+</html>
