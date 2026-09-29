@@ -107,6 +107,12 @@
   th{color:var(--sub);font-weight:600}
   .tbl-wrap{overflow-x:auto;margin-top:8px}
   tr.dup td{background:#fff6e5}
+  tr.chk td{background:#fdecec}
+  .row-btns{display:flex;gap:8px;margin:12px 0 4px}
+  .btn.sm{padding:11px 8px;font-size:14px}
+  .btn.light{background:var(--green-l);color:var(--green-d)}
+  .btn.red{background:var(--x)}
+  td input,th input{width:18px;height:18px;accent-color:var(--x)}
 </style>
 </head>
 <body>
@@ -200,6 +206,17 @@
 
   <!-- 관리자 -->
   <section class="screen" id="s-admin">
+    <div class="card" id="loginCard">
+      <h2>관리자 로그인 🔐</h2>
+      <p class="sub">Firebase에 등록한 관리자 계정으로 로그인하세요.</p>
+      <label class="lb" for="aEmail">이메일</label>
+      <input class="in" id="aEmail" type="email" autocomplete="username">
+      <label class="lb" for="aPw">비밀번호</label>
+      <input class="in" id="aPw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')adminLogin()">
+      <div class="err" id="aErr"></div>
+      <button class="btn" onclick="adminLogin()">로그인</button>
+    </div>
+    <div id="dash" style="display:none">
     <div class="card">
       <h2>관리자 · 참여 현황</h2>
       <div class="stat-grid">
@@ -214,8 +231,14 @@
     <div class="card"><h2>소속별 참여</h2><div id="aD"></div></div>
     <div class="card">
       <h2>참여자 명단</h2>
-      <p class="note">노란 행 = 같은 학번/사번 중복 제출</p>
+      <p class="note">노란 행 = 같은 학번/사번 중복 제출 · <b>중복 제출만 선택</b>을 누르면 가장 먼저 제출한 1건만 남기고 나머지를 선택해요.</p>
+      <div class="row-btns">
+        <button class="btn sm light" onclick="selectDup()">중복 제출만 선택</button>
+        <button class="btn sm red" onclick="deleteSelected()">🗑️ 선택 삭제 (<span id="selCnt">0</span>)</button>
+      </div>
       <div class="tbl-wrap"><table id="aTable"></table></div>
+    </div>
+    <button class="btn ghost" onclick="adminLogout()">로그아웃</button>
     </div>
   </section>
 
@@ -236,15 +259,17 @@ const firebaseConfig = {
   appId: "1:180923908651:web:e52bf0f7660c3de2b2e06e"
 };
 const COLLECTION = "mental_health_day_quiz_2026";
-const ADMIN_PW = "bono9002";   // 관리자 비밀번호 (주소 뒤에 #admin 입력 시 관리자 화면)
+// 관리자 화면: 주소 뒤에 #admin → Firebase Authentication 계정으로 로그인
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, serverTimestamp, query, orderBy }
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const TEST_MODE = firebaseConfig.apiKey.startsWith("YOUR_");
-let db = null;
-if (!TEST_MODE) db = getFirestore(initializeApp(firebaseConfig));
+let db = null, auth = null;
+if (!TEST_MODE) { const app = initializeApp(firebaseConfig); db = getFirestore(app); auth = getAuth(app); }
 
 /* ---------------- 문항 데이터 ---------------- */
 const QUIZ = [
