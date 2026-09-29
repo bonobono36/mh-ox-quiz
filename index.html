@@ -2,1143 +2,412 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>캠페인 만족도 조사</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>마음건강 OX 퀴즈 | SHU 학생상담센터</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css">
 <style>
   :root{
-    --bg: #F1F5F0;
-    --surface: #FFFFFF;
-    --ink: #1E2A22;
-    --ink-soft: #52604F;
-    --muted: #8A9385;
-    --border: #DCE3D8;
-    --pine: #2F6F5E;
-    --pine-dark: #1F4C40;
-    --pine-tint: #E3EFEA;
-    --mustard: #C68A2E;
-    --mustard-tint: #FBF0DD;
-    --danger: #B4482F;
-    --radius: 14px;
-    --serif: 'Noto Serif KR', serif;
-    --sans: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    --green:#2f9e6e; --green-d:#1f7a52; --green-l:#e7f6ee; --mint:#d3f0e1;
+    --o:#2f7fd8; --x:#e0565b; --ink:#23312b; --sub:#6b7a73; --line:#e3ebe7; --bg:#f4faf7; --card:#fff;
   }
-  *{ box-sizing: border-box; }
-  html,body{ margin:0; padding:0; }
-  body{
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--sans);
-    min-height: 100vh;
-    line-height: 1.6;
-  }
-  .wrap{ max-width: 640px; margin: 0 auto; padding: 0 20px 80px; }
-  header.top{
-    padding: 28px 20px 20px;
-    max-width: 640px;
-    margin: 0 auto;
-  }
-  header.top h1{
-    font-family: var(--serif);
-    font-size: 24px;
-    font-weight: 700;
-    margin: 0 0 4px;
-    color: var(--pine-dark);
-  }
-  header.top p{ margin:0; color: var(--ink-soft); font-size: 14px; }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Pretendard,-apple-system,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;line-height:1.55}
+  .wrap{max-width:480px;margin:0 auto;padding:20px 16px 48px}
+  .screen{display:none;animation:fade .35s ease}
+  .screen.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .card{background:var(--card);border-radius:20px;padding:24px 20px;box-shadow:0 4px 18px rgba(47,158,110,.08);margin-bottom:16px}
+  .badge{display:inline-block;background:var(--green-l);color:var(--green-d);font-size:13px;font-weight:700;padding:5px 12px;border-radius:99px}
+  h1{font-size:26px;line-height:1.35;margin:14px 0 10px;letter-spacing:-.5px}
+  h2{font-size:19px;margin-bottom:6px;letter-spacing:-.3px}
+  .sub{color:var(--sub);font-size:15px}
+  .btn{display:block;width:100%;border:0;border-radius:14px;padding:16px;font-size:17px;font-weight:700;font-family:inherit;cursor:pointer;background:var(--green);color:#fff;transition:.15s}
+  .btn:active{transform:scale(.98)}
+  .btn:disabled{background:#c5d3cc;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--sub);font-weight:500;font-size:14px;padding:10px}
+  .hero-emoji{font-size:56px;text-align:center;margin:8px 0}
+  .info-list{list-style:none;margin:18px 0 22px}
+  .info-list li{padding:10px 0;border-bottom:1px dashed var(--line);font-size:15px}
+  .info-list li:last-child{border:0}
 
-  nav.tabs{
-    display:flex; gap: 6px; max-width: 640px; margin: 18px auto 0; padding: 0 20px;
-  }
-  nav.tabs button{
-    flex:0 0 auto;
-    padding: 9px 16px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--ink-soft);
-    font-family: var(--sans);
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-  }
-  nav.tabs button.active{
-    background: var(--pine);
-    border-color: var(--pine);
-    color: #fff;
-  }
+  /* progress */
+  .progress{display:flex;gap:6px;margin-bottom:18px}
+  .progress span{flex:1;height:6px;border-radius:99px;background:var(--line)}
+  .progress span.on{background:var(--green)}
+  .qnum{font-weight:800;color:var(--green);font-size:15px}
+  .qtopic{font-size:13px;color:var(--sub);margin-left:6px}
+  .bubble{background:var(--green-l);border-radius:16px 16px 16px 4px;padding:14px 16px;margin:16px 0;font-size:15px;color:var(--green-d);font-weight:600}
+  .statement{font-size:19px;font-weight:700;line-height:1.5;margin:6px 0 24px;letter-spacing:-.3px}
+  .ox{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .ox button{aspect-ratio:1/0.85;border-radius:20px;border:3px solid transparent;font-size:64px;font-weight:900;cursor:pointer;font-family:inherit;transition:.15s}
+  .ox .o{background:#e8f1fc;color:var(--o)}
+  .ox .x{background:#fdecec;color:var(--x)}
+  .ox button.sel.o{border-color:var(--o);background:var(--o);color:#fff}
+  .ox button.sel.x{border-color:var(--x);background:var(--x);color:#fff}
+  .ox button:active{transform:scale(.96)}
 
-  .card{
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 22px;
-    margin-bottom: 16px;
-  }
+  /* result */
+  .score-box{text-align:center;padding:30px 20px}
+  .score{font-size:64px;font-weight:900;color:var(--green);line-height:1}
+  .score small{font-size:22px;color:var(--sub);font-weight:600}
+  .score-msg{margin-top:10px;font-size:16px;font-weight:600}
+  .ans{border-radius:16px;border:1px solid var(--line);padding:16px;margin-bottom:12px;background:#fff}
+  .ans-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .mark{font-size:13px;font-weight:800;padding:4px 10px;border-radius:99px}
+  .mark.ok{background:var(--green-l);color:var(--green-d)}
+  .mark.no{background:#fdecec;color:var(--x)}
+  .ans .st{font-weight:600;font-size:15px;margin-bottom:8px}
+  .ans .row{font-size:14px;color:var(--sub);margin-bottom:8px}
+  .ans .row b{color:var(--ink)}
+  .tip{background:#f7faf8;border-left:4px solid var(--green);border-radius:8px;padding:10px 12px;font-size:14px}
+  .center-promo{margin-top:10px;background:var(--green);color:#fff;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600}
 
-  .program-item{
-    display:flex; align-items:center; justify-content: space-between;
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px 20px;
-    margin-bottom: 12px;
-    cursor: pointer;
-    font-family: var(--sans);
-    text-align: left;
-    color: var(--ink);
-  }
-  .program-item:hover{ border-color: var(--pine); }
-  .program-item .name{ font-size: 16px; font-weight: 500; }
-  .program-item .arrow{ color: var(--pine); font-size: 18px; }
+  /* survey */
+  .sec-title{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .sec-title .n{background:var(--green);color:#fff;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800}
+  .item{padding:16px 0;border-bottom:1px solid var(--line)}
+  .item:last-child{border:0}
+  .item p{font-size:15px;font-weight:600;margin-bottom:12px}
+  .likert{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+  .likert button{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 2px;font-family:inherit;cursor:pointer;font-size:12px;color:var(--sub);line-height:1.3}
+  .likert button b{display:block;font-size:17px;color:var(--ink);margin-bottom:2px}
+  .likert button.sel{background:var(--green);border-color:var(--green);color:#fff}
+  .likert button.sel b{color:#fff}
+  .dept{display:flex;flex-wrap:wrap;gap:8px}
+  .dept button{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:9px 14px;font-family:inherit;font-size:14px;cursor:pointer;color:var(--ink)}
+  .dept button.sel{background:var(--green);border-color:var(--green);color:#fff;font-weight:700}
+  label.lb{display:block;font-size:15px;font-weight:600;margin:18px 0 8px}
+  input.in{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:14px;font-size:16px;font-family:inherit;outline:none}
+  input.in:focus{border-color:var(--green)}
+  .note{font-size:13px;color:var(--sub);margin-top:6px}
+  .err{color:var(--x);font-size:14px;text-align:center;margin:10px 0;min-height:20px}
 
-  .empty{
-    color: var(--muted);
-    font-size: 14px;
-    padding: 30px 10px;
-    text-align: center;
-  }
-
-  .q-block{ margin-bottom: 26px; }
-  .q-block .q-text{ font-size: 15px; font-weight: 500; margin-bottom: 12px; }
-  .opt-grid{ display:flex; flex-direction:column; gap: 8px; }
-  .opt-grid.horizontal{
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .opt-grid.horizontal .opt-btn{
-    flex: 1 1 0;
-    min-width: 56px;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 6px;
-    padding: 12px 4px;
-  }
-  .opt-grid.horizontal .opt-btn span:last-child{
-    font-size: 12px;
-    line-height: 1.3;
-  }
-  .opt-grid.horizontal .opt-btn .dot{ margin: 0; }
-  select.q-survey-select{
-    width: 100%;
-    padding: 13px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    font-size: 14px;
-    font-family: var(--sans);
-    background: #fff;
-    color: var(--ink);
-  }
-  textarea.q-survey-textarea{
-    width: 100%;
-    min-height: 90px;
-    padding: 13px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    font-size: 14px;
-    font-family: var(--sans);
-    background: #fff;
-    color: var(--ink);
-    resize: vertical;
-  }
-  .opt-btn{
-    display:flex; align-items:center; gap: 10px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--ink);
-    font-family: var(--sans);
-    font-size: 14px;
-    text-align: left;
-    cursor: pointer;
-  }
-  .opt-btn .dot{
-    width: 16px; height: 16px; border-radius: 50%;
-    border: 1.5px solid var(--border);
-    flex: 0 0 auto;
-  }
-  .opt-btn.selected{
-    border-color: var(--pine);
-    background: var(--pine-tint);
-    font-weight: 500;
-  }
-  .opt-btn.selected .dot{
-    border-color: var(--pine);
-    background: var(--pine);
-    box-shadow: inset 0 0 0 3px var(--pine-tint);
-  }
-
-  button.primary{
-    width: 100%;
-    padding: 15px;
-    border-radius: 10px;
-    border: none;
-    background: var(--pine);
-    color: #fff;
-    font-family: var(--sans);
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 8px;
-  }
-  button.primary:disabled{ background: var(--muted); cursor: not-allowed; }
-  button.ghost{
-    width: 100%;
-    padding: 13px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: transparent;
-    color: var(--ink-soft);
-    font-family: var(--sans);
-    font-size: 14px;
-    cursor: pointer;
-    margin-top: 10px;
-  }
-  .back-link{
-    display:inline-block; margin-bottom: 14px; color: var(--pine-dark);
-    font-size: 14px; cursor: pointer; text-decoration: none;
-  }
-
-  .thankyou{ text-align:center; padding: 60px 20px; }
-  .thankyou .mark{
-    width:64px; height:64px; border-radius:50%; background: var(--pine-tint);
-    color: var(--pine); display:flex; align-items:center; justify-content:center;
-    font-size: 30px; margin: 0 auto 18px;
-  }
-  .thankyou h2{ font-family: var(--serif); font-size:20px; margin: 0 0 8px; }
-  .thankyou p{ color: var(--ink-soft); font-size: 14px; }
+  /* done */
+  .done{text-align:center;padding:36px 22px;background:linear-gradient(160deg,#2f9e6e,#5cbf90);color:#fff}
+  .done .date{font-size:15px;font-weight:700;opacity:.9;letter-spacing:1px}
+  .done h1{color:#fff;font-size:24px;margin:10px 0 6px}
+  .tea{font-size:72px;margin:10px 0}
+  .gift{background:rgba(255,255,255,.18);border-radius:16px;padding:16px;margin-top:18px;font-size:16px;font-weight:700}
+  .proof{background:#fff;border-radius:16px;padding:16px;margin-top:14px;color:var(--ink);text-align:left;font-size:14px}
+  .proof div{display:flex;justify-content:space-between;padding:4px 0}
+  .proof span{color:var(--sub)}
+  .footer{text-align:center;color:var(--sub);font-size:12px;margin-top:20px}
 
   /* admin */
-  .lockbox{ max-width: 340px; margin: 60px auto; text-align:center; }
-  .lockbox input{
-    width: 100%; padding: 13px 14px; border-radius: 10px; border: 1px solid var(--border);
-    font-size: 15px; margin: 14px 0 10px; font-family: var(--sans);
-  }
-  .err-text{ color: var(--danger); font-size: 13px; min-height: 18px; }
-
-  .subtabs{ display:flex; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
-  .subtabs button{
-    padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--surface); color: var(--ink-soft); font-size: 13px; cursor:pointer;
-    font-family: var(--sans);
-  }
-  .subtabs button.active{ background: var(--pine-dark); border-color: var(--pine-dark); color:#fff; }
-
-  .field-label{ font-size: 13px; color: var(--ink-soft); font-weight:500; margin: 14px 0 6px; }
-  input[type=text], textarea, select{
-    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
-    font-size: 14px; font-family: var(--sans); background: #fff; color: var(--ink);
-  }
-  textarea{ resize: vertical; min-height: 44px; }
-
-  .row-item{
-    display:flex; align-items:center; justify-content: space-between; gap: 10px;
-    padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px;
-    background: var(--surface);
-  }
-  .row-item .title{ font-size: 14px; font-weight: 500; }
-  .row-item .sub{ font-size: 12px; color: var(--muted); margin-top:2px; }
-  .row-actions button{
-    border: none; background: none; cursor: pointer; font-size: 13px; padding: 6px 8px;
-    color: var(--ink-soft); font-family: var(--sans);
-  }
-  .row-actions button.danger{ color: var(--danger); }
-
-  .opt-tag-row{ display:flex; flex-wrap:wrap; gap:6px; margin: 8px 0; }
-  .opt-tag{
-    display:flex; align-items:center; gap:6px;
-    background: var(--mustard-tint); color: #7A5416;
-    padding: 5px 10px; border-radius: 999px; font-size: 12px;
-  }
-  .opt-tag button{ border:none; background:none; cursor:pointer; color:#7A5416; font-size:13px; padding:0; }
-
-  .stat-card{ background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
-  .stat-num{ font-size: 30px; font-weight:700; font-family: var(--serif); color: var(--pine-dark); }
-  .stat-label{ font-size:13px; color: var(--muted); }
-
-  .qr-box{ text-align:center; margin-top: 10px; }
-  .qr-box img{ width: 160px; height:160px; border:1px solid var(--border); border-radius: 10px; padding:8px; background:#fff; }
-  .link-box{
-    display:flex; gap:8px; margin-top:10px;
-  }
-  .link-box input{ flex:1; }
-  .link-box button{ padding: 0 14px; border-radius:8px; border:1px solid var(--border); background:var(--surface); cursor:pointer; font-size:13px; }
-
-  .hidden{ display:none !important; }
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+  .stat{background:var(--green-l);border-radius:12px;padding:12px 6px;text-align:center}
+  .stat b{display:block;font-size:22px;color:var(--green-d)}
+  .stat span{font-size:12px;color:var(--sub)}
+  .bar{margin:10px 0}
+  .bar .lbl{font-size:13px;margin-bottom:4px;display:flex;justify-content:space-between}
+  .bar .track{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+  .bar .fill{height:100%;background:var(--green);border-radius:99px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  th{color:var(--sub);font-weight:600}
+  .tbl-wrap{overflow-x:auto;margin-top:8px}
+  tr.dup td{background:#fff6e5}
 </style>
 </head>
 <body>
-
-<header class="top">
-  <h1 id="site-title">캠페인 만족도 조사</h1>
-  <p id="site-sub">참여해 주셔서 감사합니다. 프로그램을 선택하고 문항에 답해주세요.</p>
-</header>
-
-<nav class="tabs">
-  <button id="tab-public" class="active" onclick="switchMainTab('public')">설문조사</button>
-  <button id="tab-admin" onclick="switchMainTab('admin')">관리자</button>
-</nav>
-
 <div class="wrap">
 
-  <!-- PUBLIC: program list -->
-  <section id="view-list">
-    <div id="program-list"></div>
-  </section>
-
-  <!-- PUBLIC: survey -->
-  <section id="view-survey" class="hidden">
-    <span class="back-link" onclick="goToList()">‹ 프로그램 목록으로</span>
+  <!-- 시작 화면 -->
+  <section class="screen active" id="s-intro">
     <div class="card">
-      <h2 id="survey-title" style="font-family:var(--serif); font-size:18px; margin:0 0 4px;"></h2>
-      <p style="color:var(--ink-soft); font-size:13px; margin:0 0 18px;">모든 문항에 답한 후 제출해주세요.</p>
-      <div id="question-list"></div>
-      <div id="submit-error" class="err-text"></div>
-      <button class="primary" id="submit-btn" onclick="submitResponse()">제출하기</button>
+      <span class="badge">10.10 세계정신건강의 날</span>
+      <h1>마음건강,<br>얼마나 알고 있나요? 🧠</h1>
+      <p class="sub">우리가 흔히 가진 정신건강에 대한 오해, OX 퀴즈로 함께 바로잡아 봐요!</p>
+      <div class="hero-emoji">⭕ ❌</div>
+      <ul class="info-list">
+        <li>📝 총 5문항 · 100점 만점</li>
+        <li>⏱️ 약 2~3분 소요</li>
+        <li>🍵 참여 완료 시 <b>티테라피 선물</b> 증정</li>
+        <li>🏅 경력 마일리지 점수 제공</li>
+      </ul>
+      <button class="btn" onclick="startQuiz()">퀴즈 시작하기</button>
+    </div>
+    <p class="footer">SHU 학생상담센터 💚 S관 120호</p>
+  </section>
+
+  <!-- 퀴즈 화면 -->
+  <section class="screen" id="s-quiz">
+    <div class="card">
+      <div class="progress" id="progress"></div>
+      <div><span class="qnum" id="qnum"></span><span class="qtopic" id="qtopic"></span></div>
+      <div class="bubble" id="qbubble"></div>
+      <div class="statement" id="qstate"></div>
+      <div class="ox">
+        <button class="o" onclick="answer('O')">O</button>
+        <button class="x" onclick="answer('X')">X</button>
+      </div>
+    </div>
+    <button class="btn ghost" id="backBtn" onclick="prevQ()">← 이전 문항</button>
+  </section>
+
+  <!-- 결과 화면 -->
+  <section class="screen" id="s-result">
+    <div class="card score-box">
+      <span class="badge">나의 마음건강 점수</span>
+      <div style="margin-top:16px" class="score"><span id="scoreNum">0</span><small> / 100</small></div>
+      <div class="score-msg" id="scoreMsg"></div>
+    </div>
+    <div class="card">
+      <h2>정답 확인 ✅</h2>
+      <p class="sub" style="margin-bottom:14px">각 문항의 정답과 해설을 확인해 보세요.</p>
+      <div id="answers"></div>
+    </div>
+    <button class="btn" onclick="go('s-survey')">다음 : 만족도 조사 & 참여 정보 입력</button>
+  </section>
+
+  <!-- 만족도 + 대상자 정보 -->
+  <section class="screen" id="s-survey">
+    <div class="card">
+      <div class="sec-title"><span class="n">1</span><h2>캠페인 만족도</h2></div>
+      <p class="sub">해당하는 정도를 선택해 주세요.</p>
+      <div id="likertBox"></div>
+    </div>
+    <div class="card">
+      <div class="sec-title"><span class="n">2</span><h2>참여자 정보</h2></div>
+      <p class="sub">경력 마일리지 점수 제공을 위해 정확히 입력해 주세요.</p>
+      <label class="lb">소속</label>
+      <div class="dept" id="deptBox"></div>
+      <label class="lb" for="sid">학번 / 사번</label>
+      <input class="in" id="sid" inputmode="numeric" placeholder="예) 2026123456" autocomplete="off">
+      <label class="lb" for="sname">이름</label>
+      <input class="in" id="sname" placeholder="이름을 입력하세요" autocomplete="off">
+      <p class="note">🔒 입력하신 정보는 마일리지 지급 및 캠페인 운영 목적으로만 사용됩니다.</p>
+    </div>
+    <div class="err" id="err"></div>
+    <button class="btn" id="submitBtn" onclick="submitAll()">제출하기</button>
+  </section>
+
+  <!-- 완료 화면 -->
+  <section class="screen" id="s-done">
+    <div class="card done">
+      <div class="date">1010 세계정신건강의 날</div>
+      <div class="tea">🍵</div>
+      <h1>참여해 주셔서 감사합니다!</h1>
+      <div class="gift">마음을 돌봄을 위한<br>티테라피 선물을 받으세요! 🎁</div>
+      <div class="proof" id="proof"></div>
+      <p style="font-size:13px;margin-top:12px;opacity:.9">이 화면을 부스 담당자에게 보여주세요</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <b>SHU 학생상담센터 💚</b>
+      <p class="sub">📍 S관 120호<br>나를 돌보는 첫걸음, 상담센터와 함께 시작해 보세요!</p>
     </div>
   </section>
 
-  <!-- PUBLIC: thank you -->
-  <section id="view-thanks" class="hidden">
-    <div class="thankyou">
-      <div class="mark">✓</div>
-      <h2>응답이 저장되었습니다</h2>
-      <p>소중한 의견 감사합니다.</p>
-      <button class="ghost" onclick="goToList()" style="max-width:220px; margin:20px auto 0;">다른 프로그램 응답하기</button>
-    </div>
-  </section>
-
-  <!-- ADMIN: lock -->
-  <section id="view-admin-lock" class="hidden">
-    <div class="lockbox">
-      <p style="font-size:14px; color:var(--ink-soft);">관리자 비밀번호를 입력하세요</p>
-      <input type="password" id="admin-pw-input" placeholder="비밀번호">
-      <div class="err-text" id="admin-pw-err"></div>
-      <button class="primary" onclick="tryAdminLogin()">입장</button>
-    </div>
-  </section>
-
-  <!-- ADMIN: dashboard -->
-  <section id="view-admin" class="hidden">
-    <div class="subtabs">
-      <button id="sub-programs" class="active" onclick="switchAdminTab('programs')">프로그램 관리</button>
-      <button id="sub-questions" onclick="switchAdminTab('questions')">문항 관리</button>
-      <button id="sub-results" onclick="switchAdminTab('results')">결과 통계</button>
-      <button id="sub-share" onclick="switchAdminTab('share')">공유 (QR/링크)</button>
-      <button id="sub-trash" onclick="switchAdminTab('trash')">휴지통</button>
-    </div>
-
-    <!-- Programs tab -->
-    <div id="admin-programs">
-      <div class="card">
-        <div class="field-label">새 프로그램 추가</div>
-        <input type="text" id="new-program-name" placeholder="프로그램명 (예: 다정한 말 한마디 릴레이)">
-        <button class="primary" onclick="addProgram()">프로그램 추가</button>
+  <!-- 관리자 -->
+  <section class="screen" id="s-admin">
+    <div class="card">
+      <h2>관리자 · 참여 현황</h2>
+      <div class="stat-grid">
+        <div class="stat"><b id="aCount">-</b><span>참여자</span></div>
+        <div class="stat"><b id="aAvg">-</b><span>평균 점수</span></div>
+        <div class="stat"><b id="aSat">-</b><span>만족도 평균</span></div>
       </div>
-      <div id="program-manage-list"></div>
+      <button class="btn" onclick="downloadCSV()">📥 엑셀(CSV) 다운로드</button>
     </div>
-
-    <!-- Questions tab -->
-    <div id="admin-questions" class="hidden">
-      <div class="card">
-        <div class="field-label">대상 프로그램</div>
-        <select id="q-program-select" onchange="renderQuestionManageList()"></select>
-
-        <div class="field-label" id="q-form-title">새 문항 내용</div>
-        <textarea id="new-q-text" placeholder="예: 프로그램 전반에 대해 만족하십니까?"></textarea>
-
-        <div class="field-label">답변 형식</div>
-        <div class="subtabs" id="display-type-toggle">
-          <button type="button" class="toggle-opt active" data-val="buttons" onclick="setDisplayType('buttons')">펼쳐서 클릭</button>
-          <button type="button" class="toggle-opt" data-val="dropdown" onclick="setDisplayType('dropdown')">드롭다운</button>
-          <button type="button" class="toggle-opt" data-val="text" onclick="setDisplayType('text')">주관식(텍스트)</button>
-        </div>
-
-        <div id="options-section-wrap">
-          <div class="field-label">보기 항목 (직접 추가)</div>
-          <div style="display:flex; gap:8px;">
-            <input type="text" id="new-q-option" placeholder="보기 텍스트 입력 후 추가" style="flex:1;">
-            <button class="ghost" style="width:auto; margin:0; white-space:nowrap;" onclick="addOptionDraft()">추가</button>
-          </div>
-          <div class="opt-tag-row" id="option-draft-list"></div>
-          <button class="ghost" style="margin-top:6px;" onclick="fillDefaultOptions()">기본 5점 척도로 채우기</button>
-
-          <div id="layout-toggle-wrap">
-            <div class="field-label">배열 방향</div>
-            <div class="subtabs" id="layout-toggle">
-              <button type="button" class="toggle-opt active" data-val="vertical" onclick="setLayout('vertical')">세로</button>
-              <button type="button" class="toggle-opt" data-val="horizontal" onclick="setLayout('horizontal')">가로</button>
-            </div>
-          </div>
-        </div>
-
-        <button class="primary" id="q-submit-btn" onclick="addQuestion()">문항 추가</button>
-        <button class="ghost hidden" id="q-cancel-btn" onclick="cancelEditQuestion()">수정 취소</button>
-      </div>
-      <div id="question-manage-list"></div>
-    </div>
-
-    <!-- Results tab -->
-    <div id="admin-results" class="hidden">
-      <div class="card">
-        <div class="field-label">프로그램 선택</div>
-        <select id="r-program-select" onchange="renderResults()"></select>
-        <button class="ghost" id="export-excel-btn" style="margin-top:10px;" onclick="exportResultsToExcel()">엑셀로 다운로드</button>
-      </div>
-      <div id="results-summary"></div>
-      <div id="results-charts"></div>
-      <div id="results-responses"></div>
-    </div>
-
-    <!-- Share tab -->
-    <div id="admin-share" class="hidden">
-      <div class="card">
-        <div class="field-label">설문 참여 주소</div>
-        <div class="link-box">
-          <input type="text" id="share-url" readonly>
-          <button onclick="copyShareUrl()">복사</button>
-        </div>
-        <div class="qr-box">
-          <img id="qr-img" alt="QR 코드">
-          <p style="font-size:12px; color:var(--muted); margin-top:8px;">QR을 스캔하면 바로 설문 화면으로 이동합니다.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Trash tab -->
-    <div id="admin-trash" class="hidden">
-      <p style="font-size:13px; color:var(--ink-soft); margin:0 0 14px;">삭제한 프로그램, 문항, 응답이 여기에 보관됩니다. 복구하거나 완전히 삭제할 수 있어요.</p>
-      <div id="trash-list"></div>
+    <div class="card"><h2>문항별 정답률</h2><div id="aQ"></div></div>
+    <div class="card"><h2>만족도 문항별 평균 (5점)</h2><div id="aS"></div></div>
+    <div class="card"><h2>소속별 참여</h2><div id="aD"></div></div>
+    <div class="card">
+      <h2>참여자 명단</h2>
+      <p class="note">노란 행 = 같은 학번/사번 중복 제출</p>
+      <div class="tbl-wrap"><table id="aTable"></table></div>
     </div>
   </section>
 
 </div>
 
-<script>
-/* =========================================================
-   1) FIREBASE 설정 — Firebase 콘솔에서 발급받은 값으로 교체하세요
-   ========================================================= */
+<script type="module">
+/* ======================================================
+   🔧 Firebase 설정 — Firebase 콘솔 > 프로젝트 설정 > 웹 앱의
+   firebaseConfig 값을 그대로 붙여넣으세요.
+   (apiKey가 "YOUR_" 로 시작하면 테스트 모드로 동작: 이 기기에만 저장)
+   ====================================================== */
 const firebaseConfig = {
-  apiKey: "AIzaSyC62cMm8vpTVObCs3XzGYSJuhi9ydyrukU",
-  authDomain: "campaign-survey-2026.firebaseapp.com",
-  projectId: "campaign-survey-2026",
-  storageBucket: "campaign-survey-2026.firebasestorage.app",
-  messagingSenderId: "999305256213",
-  appId: "1:999305256213:web:ecb60958603f41757f1d1c"
+  apiKey: "AIzaSyAMEASj9BI7zqLQVJPaCnhAl4GIuu7DZOQ",
+  authDomain: "mh-ox-quiz-2026.firebaseapp.com",
+  projectId: "mh-ox-quiz-2026",
+  storageBucket: "mh-ox-quiz-2026.firebasestorage.app",
+  messagingSenderId: "180923908651",
+  appId: "1:180923908651:web:e52bf0f7660c3de2b2e06e"
 };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const COLLECTION = "mental_health_day_quiz_2026";
+const ADMIN_PW = "bono9002";   // 관리자 비밀번호 (주소 뒤에 #admin 입력 시 관리자 화면)
 
-/* =========================================================
-   2) 관리자 비밀번호 — 원하는 값으로 교체하세요
-   ========================================================= */
-const ADMIN_PASSWORD = "bono9002";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, serverTimestamp, query, orderBy }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ========================================================= */
+const TEST_MODE = firebaseConfig.apiKey.startsWith("YOUR_");
+let db = null;
+if (!TEST_MODE) db = getFirestore(initializeApp(firebaseConfig));
 
-let programs = [];
-let questions = [];
-let currentProgram = null;
-let currentAnswers = {};
-let isAdminUnlocked = sessionStorage.getItem('surveyAdminUnlocked') === '1';
+/* ---------------- 문항 데이터 ---------------- */
+const QUIZ = [
+  { topic:"ADHD에 대한 오해", bubble:"과제 시작만 3시간째… 나 혹시 ADHD?",
+    st:"집중이 잘 안 되고 자주 미루는 것만으로 ADHD라고 진단할 수 있다.", ans:"X",
+    tip:"집중력 저하는 수면 부족, 스트레스, 불안 등 다양한 원인으로 나타날 수 있어요. ADHD는 증상의 지속성과 여러 생활환경에서의 어려움 등을 종합적으로 평가해야 합니다." },
+  { topic:"정신건강과 의지", bubble:"마음먹기 나름이지! 긍정적으로 생각하면 다 해결되는 거 아냐?",
+    st:"정신건강의 어려움은 긍정적으로 생각하려는 노력만으로 항상 해결되는 것은 아니다.", ans:"O",
+    tip:"마음의 어려움에는 다양한 요인이 작용해요. 무조건 긍정하려 애쓰기보다 자신의 감정을 이해하고 필요한 도움을 받는 것이 중요합니다." },
+  { topic:"정신과 치료에 대한 편견", bubble:"정신과 약 먹으면 평생 못 끊는 거 아니야?",
+    st:"정신건강의학과 약물치료를 시작하면 반드시 평생 복용해야 한다.", ans:"X",
+    tip:"약물치료의 기간은 증상과 치료 반응 등에 따라 달라져요. 복용 여부와 중단 시기는 반드시 담당 의료진과 상의해야 합니다." },
+  { topic:"상담에 대한 편견", bubble:"상담은 진짜 인생 망했을 때 가는 거 아닌가요?",
+    st:"심리상담은 심각한 정신건강 문제가 있는 사람만 이용할 수 있다.", ans:"X",
+    tip:"진로, 연애, 인간관계, 학업 스트레스부터 자기이해까지! 상담은 나를 더 잘 알고 싶을 때도 이용할 수 있어요." },
+  { topic:"SHU 학생상담센터 이용 안내", bubble:"상담받고 싶은데… 혹시 비용도 들고, 엄청 심각해야 갈 수 있는 거 아니야?",
+    st:"SHU 학생상담센터는 삼육보건대학교 재학생이라면 누구나 무료로 이용할 수 있다.", ans:"O",
+    tip:"맞아요! 고민이 크지 않아도, 나를 더 이해하고 싶어도 괜찮아요. 재학생 누구나 무료로 이용할 수 있습니다.",
+    promo:"SHU 학생상담센터 💚 📍 S관 120호<br>나를 돌보는 첫걸음, 상담센터와 함께 시작해 보세요!" }
+];
+const SAT = [
+  "일상에서 경험하는 심리적 어려움에 대해 적절하게 대처하는 방법을 생각해 볼 수 있었다.",
+  "마음건강에 관한 기존의 생각이나 오해를 돌아보는 계기가 되었다.",
+  "학생상담센터가 심리적 어려움이 있을 때 편안하게 도움을 요청할 수 있는 곳이라는 생각이 들었다."
+];
+const LIKERT = ["전혀\n아니다","아니다","보통","그렇다","매우\n그렇다"];
+const DEPTS = ["간호학과","치위생과","뷰티융합과","사회복지과","아동심리상담과","의료AI융합과","글로벌융합과","글로벌요양서비스과","교직원"];
 
-function switchMainTab(tab){
-  document.getElementById('tab-public').classList.toggle('active', tab==='public');
-  document.getElementById('tab-admin').classList.toggle('active', tab==='admin');
-  document.getElementById('view-list').classList.toggle('hidden', tab!=='public');
-  document.getElementById('view-survey').classList.add('hidden');
-  document.getElementById('view-thanks').classList.add('hidden');
-  document.getElementById('view-admin-lock').classList.add('hidden');
-  document.getElementById('view-admin').classList.add('hidden');
+/* ---------------- 상태 ---------------- */
+let cur = 0, picks = [], sat = [null,null,null], dept = null, score = 0, rows = [];
 
-  if(tab==='admin'){
-    if(isAdminUnlocked){
-      document.getElementById('view-admin').classList.remove('hidden');
-      loadAdminData();
+const $ = id => document.getElementById(id);
+window.go = id => {
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $(id).classList.add("active"); window.scrollTo(0,0);
+};
+
+/* ---------------- 퀴즈 ---------------- */
+window.startQuiz = () => { cur=0; picks=[]; renderQ(); go("s-quiz"); };
+function renderQ(){
+  const q = QUIZ[cur];
+  $("progress").innerHTML = QUIZ.map((_,i)=>`<span class="${i<=cur?'on':''}"></span>`).join("");
+  $("qnum").textContent = `Q${cur+1}.`;
+  $("qtopic").textContent = q.topic;
+  $("qbubble").textContent = `"${q.bubble}"`;
+  $("qstate").textContent = q.st;
+  document.querySelectorAll(".ox button").forEach(b=>b.classList.toggle("sel", b.textContent===picks[cur]));
+  $("backBtn").style.visibility = cur===0 ? "hidden" : "visible";
+}
+window.answer = v => {
+  picks[cur]=v;
+  document.querySelectorAll(".ox button").forEach(b=>b.classList.toggle("sel", b.textContent===v));
+  setTimeout(()=>{ if(cur<QUIZ.length-1){cur++;renderQ();} else showResult(); }, 280);
+};
+window.prevQ = () => { if(cur>0){cur--;renderQ();} };
+
+function showResult(){
+  const per = 100/QUIZ.length;
+  score = Math.round(QUIZ.reduce((s,q,i)=>s+(picks[i]===q.ans?per:0),0));
+  $("scoreMsg").textContent =
+    score===100 ? "완벽해요! 마음건강 박사님 🎉" :
+    score>=80 ? "훌륭해요! 마음건강 지식이 탄탄하네요 👏" :
+    score>=60 ? "좋아요! 해설을 보며 한 번 더 확인해 봐요 🙂" :
+                "괜찮아요! 오늘 새롭게 알게 된 것이 더 소중해요 💚";
+  $("answers").innerHTML = QUIZ.map((q,i)=>{
+    const ok = picks[i]===q.ans;
+    return `<div class="ans">
+      <div class="ans-head"><b>Q${i+1}. ${q.topic}</b><span class="mark ${ok?'ok':'no'}">${ok?'정답':'오답'}</span></div>
+      <div class="st">${q.st}</div>
+      <div class="row">내 답 <b>${picks[i]}</b> · 정답 <b>${q.ans}</b></div>
+      <div class="tip">💡 ${q.tip}</div>
+      ${q.promo?`<div class="center-promo">${q.promo}</div>`:""}
+    </div>`;
+  }).join("");
+  go("s-result");
+  // 점수 카운트 애니메이션
+  let n=0; const el=$("scoreNum"); el.textContent=0;
+  const t=setInterval(()=>{ n=Math.min(score,n+4); el.textContent=n; if(n>=score) clearInterval(t); },25);
+}
+
+/* ---------------- 만족도 / 정보 ---------------- */
+$("likertBox").innerHTML = SAT.map((s,i)=>`
+  <div class="item"><p>${i+1}) ${s}</p>
+    <div class="likert">${LIKERT.map((l,k)=>`<button data-q="${i}" data-v="${k+1}"><b>${k+1}</b>${l.replace("\n","<br>")}</button>`).join("")}</div>
+  </div>`).join("");
+$("likertBox").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  const q=+b.dataset.q; sat[q]=+b.dataset.v;
+  b.parentElement.querySelectorAll("button").forEach(x=>x.classList.toggle("sel",x===b));
+});
+$("deptBox").innerHTML = DEPTS.map(d=>`<button>${d}</button>`).join("");
+$("deptBox").addEventListener("click", e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  dept=b.textContent; $("deptBox").querySelectorAll("button").forEach(x=>x.classList.toggle("sel",x===b));
+});
+
+window.submitAll = async () => {
+  const sid=$("sid").value.trim(), name=$("sname").value.trim();
+  if(sat.includes(null)) return $("err").textContent="만족도 3문항에 모두 응답해 주세요.";
+  if(!dept) return $("err").textContent="소속을 선택해 주세요.";
+  if(!sid) return $("err").textContent="학번 또는 사번을 입력해 주세요.";
+  if(!name) return $("err").textContent="이름을 입력해 주세요.";
+  $("err").textContent=""; const btn=$("submitBtn"); btn.disabled=true; btn.textContent="제출 중...";
+  const data = {
+    score, answers: picks.join(""), correct: QUIZ.map((q,i)=>picks[i]===q.ans?1:0),
+    sat1:sat[0], sat2:sat[1], sat3:sat[2], dept, sid, name,
+    clientTime: new Date().toISOString()
+  };
+  try{
+    if(TEST_MODE){
+      const arr=JSON.parse(localStorage.getItem(COLLECTION)||"[]"); arr.push(data);
+      localStorage.setItem(COLLECTION, JSON.stringify(arr));
     } else {
-      document.getElementById('view-admin-lock').classList.remove('hidden');
+      await addDoc(collection(db,COLLECTION), {...data, createdAt: serverTimestamp()});
     }
+    const now=new Date();
+    $("proof").innerHTML = `
+      <div><span>이름</span><b>${esc(name)}</b></div>
+      <div><span>소속</span><b>${dept}</b></div>
+      <div><span>퀴즈 점수</span><b>${score}점</b></div>
+      <div><span>참여 시각</span><b>${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}</b></div>`;
+    go("s-done");
+  }catch(e){
+    console.error(e); $("err").textContent="제출 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.";
+    btn.disabled=false; btn.textContent="제출하기";
   }
-}
+};
+const esc = s => s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-function tryAdminLogin(){
-  const val = document.getElementById('admin-pw-input').value;
-  if(val === ADMIN_PASSWORD){
-    isAdminUnlocked = true;
-    sessionStorage.setItem('surveyAdminUnlocked','1');
-    document.getElementById('view-admin-lock').classList.add('hidden');
-    document.getElementById('view-admin').classList.remove('hidden');
-    loadAdminData();
-  } else {
-    document.getElementById('admin-pw-err').textContent = '비밀번호가 올바르지 않습니다.';
+/* ---------------- 관리자 ---------------- */
+async function openAdmin(){
+  const pw = prompt("관리자 비밀번호를 입력하세요");
+  if(pw!==ADMIN_PW){ alert("비밀번호가 올바르지 않습니다."); location.hash=""; return; }
+  go("s-admin");
+  if(TEST_MODE) rows = JSON.parse(localStorage.getItem(COLLECTION)||"[]");
+  else {
+    const snap = await getDocs(query(collection(db,COLLECTION), orderBy("createdAt","asc")));
+    rows = snap.docs.map(d=>d.data());
   }
+  const n=rows.length, avg=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length):0;
+  $("aCount").textContent=n;
+  $("aAvg").textContent=avg(rows.map(r=>r.score)).toFixed(1);
+  $("aSat").textContent=avg(rows.flatMap(r=>[r.sat1,r.sat2,r.sat3])).toFixed(2);
+  const bar=(l,v,max,txt)=>`<div class="bar"><div class="lbl"><span>${l}</span><b>${txt}</b></div><div class="track"><div class="fill" style="width:${max?v/max*100:0}%"></div></div></div>`;
+  $("aQ").innerHTML = QUIZ.map((q,i)=>{const r=avg(rows.map(x=>x.correct[i]))*100; return bar(`Q${i+1}. ${q.topic}`,r,100,r.toFixed(0)+"%");}).join("");
+  $("aS").innerHTML = SAT.map((s,i)=>{const v=avg(rows.map(x=>x["sat"+(i+1)])); return bar(`${i+1}) ${s.slice(0,22)}…`,v,5,v.toFixed(2));}).join("");
+  const dc=DEPTS.map(d=>[d,rows.filter(r=>r.dept===d).length]); const mx=Math.max(1,...dc.map(x=>x[1]));
+  $("aD").innerHTML = dc.map(([d,c])=>bar(d,c,mx,c+"명")).join("");
+  const seen={}; rows.forEach(r=>seen[r.sid]=(seen[r.sid]||0)+1);
+  $("aTable").innerHTML = `<tr><th>#</th><th>시각</th><th>소속</th><th>학번/사번</th><th>이름</th><th>점수</th><th>만족도</th></tr>` +
+    rows.map((r,i)=>`<tr class="${seen[r.sid]>1?'dup':''}"><td>${i+1}</td><td>${fmt(r)}</td><td>${r.dept}</td><td>${esc(r.sid)}</td><td>${esc(r.name)}</td><td>${r.score}</td><td>${r.sat1}/${r.sat2}/${r.sat3}</td></tr>`).join("");
 }
-
-/* ---------------- PUBLIC: program list ---------------- */
-function loadPrograms(){
-  db.collection('programs').orderBy('order','asc').onSnapshot(snap=>{
-    const all = [];
-    snap.forEach(doc=> all.push({id:doc.id, ...doc.data()}));
-    window.__allPrograms = all;
-    programs = all.filter(p=>!p.deletedAt);
-    renderProgramList();
-    if(document.getElementById('q-program-select')) populateProgramSelects();
-  });
-}
-
-function renderProgramList(){
-  const el = document.getElementById('program-list');
-  if(programs.length===0){
-    el.innerHTML = '<div class="empty">아직 등록된 프로그램이 없습니다.</div>';
-    return;
-  }
-  el.innerHTML = programs.map(p=>`
-    <button class="program-item" onclick="openProgram('${p.id}')">
-      <span class="name">${escapeHtml(p.name)}</span>
-      <span class="arrow">›</span>
-    </button>
-  `).join('');
-}
-
-function openProgram(programId){
-  currentProgram = programs.find(p=>p.id===programId);
-  currentAnswers = {};
-  document.getElementById('view-list').classList.add('hidden');
-  document.getElementById('view-survey').classList.remove('hidden');
-  document.getElementById('survey-title').textContent = currentProgram.name;
-  document.getElementById('submit-error').textContent = '';
-
-  db.collection('questions').where('programId','==', programId).get().then(snap=>{
-    const qs = [];
-    snap.forEach(doc=> qs.push({id:doc.id, ...doc.data()}));
-    const activeQs = qs.filter(q=>!q.deletedAt);
-    activeQs.sort((a,b)=> (a.order||0) - (b.order||0));
-    renderQuestions(activeQs);
-  }).catch(err=>{
-    console.error(err);
-    document.getElementById('question-list').innerHTML = '<div class="empty">문항을 불러오지 못했습니다. 콘솔 오류를 확인해주세요.</div>';
-  });
-}
-
-function renderQuestions(qs){
-  const el = document.getElementById('question-list');
-  if(qs.length===0){
-    el.innerHTML = '<div class="empty">이 프로그램에는 아직 등록된 문항이 없습니다.</div>';
-    document.getElementById('submit-btn').disabled = true;
-    return;
-  }
-  document.getElementById('submit-btn').disabled = false;
-  el.innerHTML = qs.map(q=>{
-    const displayType = q.displayType || 'buttons';
-    const layout = q.layout || 'vertical';
-    if(displayType === 'dropdown'){
-      return `
-        <div class="q-block" data-qid="${q.id}">
-          <div class="q-text">${escapeHtml(q.text)}</div>
-          <select class="q-survey-select" onchange="selectDropdownAnswer('${q.id}', this.value)">
-            <option value="" disabled selected>선택하세요</option>
-            ${q.options.map(opt=>`<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`).join('')}
-          </select>
-        </div>
-      `;
-    }
-    if(displayType === 'text'){
-      return `
-        <div class="q-block" data-qid="${q.id}">
-          <div class="q-text">${escapeHtml(q.text)}</div>
-          <textarea class="q-survey-textarea" placeholder="답변을 입력해주세요" oninput="selectTextAnswer('${q.id}', this.value)"></textarea>
-        </div>
-      `;
-    }
-    return `
-      <div class="q-block" data-qid="${q.id}">
-        <div class="q-text">${escapeHtml(q.text)}</div>
-        <div class="opt-grid ${layout==='horizontal' ? 'horizontal' : ''}">
-          ${q.options.map(opt=>`
-            <button type="button" class="opt-btn" data-qid="${q.id}" data-opt="${escapeHtml(opt)}" onclick="selectOption('${q.id}', this)">
-              <span class="dot"></span><span>${escapeHtml(opt)}</span>
-            </button>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  }).join('');
-  window.__currentQuestions = qs;
-}
-
-function selectDropdownAnswer(qid, value){
-  currentAnswers[qid] = value;
-  document.getElementById('submit-error').textContent = '';
-}
-
-function selectTextAnswer(qid, value){
-  const trimmed = value.trim();
-  if(trimmed){ currentAnswers[qid] = trimmed; } else { delete currentAnswers[qid]; }
-  document.getElementById('submit-error').textContent = '';
-}
-
-function selectOption(qid, btn){
-  const container = btn.closest('.q-block');
-  container.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
-  btn.classList.add('selected');
-  currentAnswers[qid] = btn.getAttribute('data-opt');
-  document.getElementById('submit-error').textContent = '';
-}
-
-function goToList(){
-  document.getElementById('view-survey').classList.add('hidden');
-  document.getElementById('view-thanks').classList.add('hidden');
-  document.getElementById('view-list').classList.remove('hidden');
-  currentProgram = null;
-  currentAnswers = {};
-}
-
-function submitResponse(){
-  const qs = window.__currentQuestions || [];
-  const missing = qs.filter(q=> !currentAnswers[q.id]);
-  if(missing.length>0){
-    document.getElementById('submit-error').textContent = '모든 문항에 답해주세요.';
-    return;
-  }
-  const answers = qs.map(q=>({
-    questionId: q.id,
-    questionText: q.text,
-    answer: currentAnswers[q.id]
-  }));
-  db.collection('responses').add({
-    programId: currentProgram.id,
-    programName: currentProgram.name,
-    answers: answers,
-    submittedAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(()=>{
-    document.getElementById('view-survey').classList.add('hidden');
-    document.getElementById('view-thanks').classList.remove('hidden');
-  }).catch(err=>{
-    document.getElementById('submit-error').textContent = '저장 중 오류가 발생했습니다. 다시 시도해주세요.';
-    console.error(err);
-  });
-}
-
-/* ---------------- ADMIN: shared ---------------- */
-function switchAdminTab(tab){
-  ['programs','questions','results','share','trash'].forEach(t=>{
-    document.getElementById('sub-'+t).classList.toggle('active', t===tab);
-    document.getElementById('admin-'+t).classList.toggle('hidden', t!==tab);
-  });
-  if(tab==='questions') renderQuestionManageList();
-  if(tab==='results') renderResults();
-  if(tab==='share') renderShare();
-  if(tab==='trash') renderTrash();
-}
-
-function loadAdminData(){
-  populateProgramSelects();
-  renderProgramManageList();
-}
-
-function populateProgramSelects(){
-  const qSel = document.getElementById('q-program-select');
-  const rSel = document.getElementById('r-program-select');
-  if(!qSel) return;
-  const opts = programs.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-  const prevQ = qSel.value, prevR = rSel.value;
-  qSel.innerHTML = opts || '<option value="">등록된 프로그램 없음</option>';
-  rSel.innerHTML = opts || '<option value="">등록된 프로그램 없음</option>';
-  if(programs.some(p=>p.id===prevQ)) qSel.value = prevQ;
-  if(programs.some(p=>p.id===prevR)) rSel.value = prevR;
-}
-
-/* ---------------- ADMIN: programs ---------------- */
-function addProgram(){
-  const input = document.getElementById('new-program-name');
-  const name = input.value.trim();
-  if(!name) return;
-  db.collection('programs').add({
-    name: name,
-    order: programs.length,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  }).then(()=>{ input.value=''; });
-}
-
-function renderProgramManageList(){
-  const el = document.getElementById('program-manage-list');
-  if(programs.length===0){ el.innerHTML=''; return; }
-  el.innerHTML = programs.map(p=>`
-    <div class="row-item">
-      <div>
-        <div class="title">${escapeHtml(p.name)}</div>
-      </div>
-      <div class="row-actions">
-        <button onclick="renameProgram('${p.id}','${escapeAttr(p.name)}')">이름 수정</button>
-        <button class="danger" onclick="deleteProgram('${p.id}')">삭제</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-function renameProgram(id, oldName){
-  const name = prompt('새 프로그램명을 입력하세요', oldName);
-  if(name && name.trim()){
-    db.collection('programs').doc(id).update({ name: name.trim() });
-  }
-}
-
-function deleteProgram(id){
-  if(!confirm('프로그램을 휴지통으로 이동할까요? 관련 문항도 함께 휴지통으로 이동됩니다. (휴지통에서 복구 가능)')) return;
-  db.collection('questions').where('programId','==', id).get().then(snap=>{
-    const batch = db.batch();
-    const now = firebase.firestore.FieldValue.serverTimestamp();
-    snap.forEach(doc=>{
-      if(!doc.data().deletedAt) batch.update(doc.ref, { deletedAt: now });
-    });
-    batch.update(db.collection('programs').doc(id), { deletedAt: now });
-    return batch.commit();
-  });
-}
-
-/* ---------------- ADMIN: questions ---------------- */
-let optionDraft = [];
-let editingQuestionId = null;
-let questionDisplayType = 'buttons';
-let questionLayout = 'vertical';
-
-function setDisplayType(val){
-  questionDisplayType = val;
-  updateToggleUI();
-}
-function setLayout(val){
-  questionLayout = val;
-  updateToggleUI();
-}
-function updateToggleUI(){
-  document.querySelectorAll('#display-type-toggle button').forEach(b=>
-    b.classList.toggle('active', b.getAttribute('data-val')===questionDisplayType));
-  document.querySelectorAll('#layout-toggle button').forEach(b=>
-    b.classList.toggle('active', b.getAttribute('data-val')===questionLayout));
-  document.getElementById('layout-toggle-wrap').classList.toggle('hidden', questionDisplayType!=='buttons');
-  document.getElementById('options-section-wrap').classList.toggle('hidden', questionDisplayType==='text');
-}
-
-function addOptionDraft(){
-  const input = document.getElementById('new-q-option');
-  const val = input.value.trim();
-  if(!val) return;
-  optionDraft.push(val);
-  input.value = '';
-  renderOptionDraft();
-}
-
-function removeOptionDraft(idx){
-  optionDraft.splice(idx,1);
-  renderOptionDraft();
-}
-
-function renderOptionDraft(){
-  document.getElementById('option-draft-list').innerHTML = optionDraft.map((o,i)=>`
-    <span class="opt-tag">${escapeHtml(o)}<button onclick="removeOptionDraft(${i})">×</button></span>
-  `).join('');
-}
-
-function fillDefaultOptions(){
-  optionDraft = ['매우 만족','만족','보통','불만족','매우 불만족'];
-  renderOptionDraft();
-}
-
-function startEditQuestion(q){
-  editingQuestionId = q.id;
-  document.getElementById('new-q-text').value = q.text;
-  optionDraft = q.options.slice();
-  renderOptionDraft();
-  questionDisplayType = q.displayType || 'buttons';
-  questionLayout = q.layout || 'vertical';
-  updateToggleUI();
-  document.getElementById('q-form-title').textContent = '문항 수정 중';
-  document.getElementById('q-submit-btn').textContent = '수정 저장';
-  document.getElementById('q-cancel-btn').classList.remove('hidden');
-  document.getElementById('new-q-text').scrollIntoView({behavior:'smooth', block:'center'});
-}
-
-function cancelEditQuestion(){
-  editingQuestionId = null;
-  document.getElementById('new-q-text').value = '';
-  optionDraft = [];
-  renderOptionDraft();
-  questionDisplayType = 'buttons';
-  questionLayout = 'vertical';
-  updateToggleUI();
-  document.getElementById('q-form-title').textContent = '새 문항 내용';
-  document.getElementById('q-submit-btn').textContent = '문항 추가';
-  document.getElementById('q-cancel-btn').classList.add('hidden');
-}
-
-function addQuestion(){
-  const programId = document.getElementById('q-program-select').value;
-  const text = document.getElementById('new-q-text').value.trim();
-  if(!programId){ alert('먼저 프로그램을 추가하고 선택해주세요.'); return; }
-  if(!text){ alert('문항 내용을 입력해주세요.'); return; }
-  if(questionDisplayType !== 'text' && optionDraft.length < 2){ alert('보기 항목을 2개 이상 추가해주세요.'); return; }
-  const finalOptions = questionDisplayType === 'text' ? [] : optionDraft.slice();
-
-  if(editingQuestionId){
-    db.collection('questions').doc(editingQuestionId).update({
-      text, options: finalOptions,
-      displayType: questionDisplayType, layout: questionLayout
-    }).then(()=>{
-      cancelEditQuestion();
-    });
-    return;
-  }
-
-  db.collection('questions').where('programId','==', programId).get().then(snap=>{
-    const activeCount = snap.docs.filter(d=>!d.data().deletedAt).length;
-    return db.collection('questions').add({
-      programId, text, options: finalOptions, order: activeCount,
-      displayType: questionDisplayType, layout: questionLayout,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  }).then(()=>{
-    document.getElementById('new-q-text').value = '';
-    optionDraft = [];
-    renderOptionDraft();
-    questionDisplayType = 'buttons';
-    questionLayout = 'vertical';
-    updateToggleUI();
-    renderQuestionManageList();
-  });
-}
-
-function moveQuestion(programId, qid, direction){
-  db.collection('questions').where('programId','==', programId).get().then(snap=>{
-    const qs = [];
-    snap.forEach(doc=> qs.push({id:doc.id, ...doc.data()}));
-    const activeQs = qs.filter(q=>!q.deletedAt);
-    activeQs.sort((a,b)=> (a.order||0) - (b.order||0));
-    const idx = activeQs.findIndex(q=>q.id===qid);
-    const swapIdx = direction==='up' ? idx-1 : idx+1;
-    if(idx<0 || swapIdx<0 || swapIdx>=activeQs.length) return;
-    const a = activeQs[idx], b = activeQs[swapIdx];
-    const orderA = a.order||0, orderB = b.order||0;
-    const batch = db.batch();
-    batch.update(db.collection('questions').doc(a.id), { order: orderB });
-    batch.update(db.collection('questions').doc(b.id), { order: orderA });
-    return batch.commit();
-  });
-}
-
-function renderQuestionManageList(){
-  const programId = document.getElementById('q-program-select').value;
-  const el = document.getElementById('question-manage-list');
-  if(!programId){ el.innerHTML=''; return; }
-  db.collection('questions').where('programId','==', programId).onSnapshot(snap=>{
-    const all = [];
-    snap.forEach(doc=> all.push({id:doc.id, ...doc.data()}));
-    const qs = all.filter(q=>!q.deletedAt);
-    qs.sort((a,b)=> (a.order||0) - (b.order||0));
-    window.__adminQuestions = qs;
-    if(qs.length===0){ el.innerHTML = '<div class="empty">등록된 문항이 없습니다.</div>'; return; }
-    el.innerHTML = qs.map((q,i)=>`
-      <div class="row-item" style="flex-direction:column; align-items:flex-start;">
-        <div style="display:flex; width:100%; justify-content:space-between;">
-          <div class="title">${i+1}. ${escapeHtml(q.text)}</div>
-          <div class="row-actions" style="display:flex; align-items:center; gap:2px;">
-            <button onclick="moveQuestion('${programId}','${q.id}','up')" ${i===0?'disabled style="opacity:.3;"':''} title="위로">▲</button>
-            <button onclick="moveQuestion('${programId}','${q.id}','down')" ${i===qs.length-1?'disabled style="opacity:.3;"':''} title="아래로">▼</button>
-            <button onclick='startEditQuestion(${JSON.stringify(q).replace(/'/g, "&#39;")})'>수정</button>
-            <button onclick="deleteQuestion('${q.id}')" class="danger">삭제</button>
-          </div>
-        </div>
-        ${q.displayType==='text' ? '' : `<div class="sub">보기: ${q.options.map(escapeHtml).join(' / ')}</div>`}
-        <div class="sub">표시: ${q.displayType==='text' ? '주관식(텍스트)' : q.displayType==='dropdown' ? '드롭다운' : (q.layout==='horizontal' ? '펼쳐서 클릭 · 가로' : '펼쳐서 클릭 · 세로')}</div>
-      </div>
-    `).join('');
-  }, err=>{
-    console.error(err);
-    el.innerHTML = '<div class="empty">문항을 불러오지 못했습니다. 콘솔 오류를 확인해주세요.</div>';
-  });
-}
-
-function deleteQuestion(id){
-  if(!confirm('문항을 휴지통으로 이동할까요? (휴지통에서 복구 가능)')) return;
-  db.collection('questions').doc(id).update({ deletedAt: firebase.firestore.FieldValue.serverTimestamp() });
-}
-
-/* ---------------- ADMIN: results ---------------- */
-let chartInstances = [];
-
-function renderResults(){
-  const programId = document.getElementById('r-program-select').value;
-  const summaryEl = document.getElementById('results-summary');
-  const chartsEl = document.getElementById('results-charts');
-  const responsesEl = document.getElementById('results-responses');
-  chartInstances.forEach(c=>c.destroy());
-  chartInstances = [];
-  if(!programId){ summaryEl.innerHTML=''; chartsEl.innerHTML=''; responsesEl.innerHTML=''; return; }
-
-  Promise.all([
-    db.collection('questions').where('programId','==', programId).get(),
-    db.collection('responses').where('programId','==', programId).get()
-  ]).then(([qSnap, rSnap])=>{
-    const qsAll = []; qSnap.forEach(d=> qsAll.push({id:d.id, ...d.data()}));
-    const qs = qsAll.filter(q=>!q.deletedAt);
-    qs.sort((a,b)=> (a.order||0) - (b.order||0));
-    const rAll = []; rSnap.forEach(d=> rAll.push({id:d.id, ...d.data()}));
-    const responses = rAll.filter(r=>!r.deletedAt);
-    responses.sort((a,b)=>{
-      const ta = a.submittedAt && a.submittedAt.toMillis ? a.submittedAt.toMillis() : 0;
-      const tb = b.submittedAt && b.submittedAt.toMillis ? b.submittedAt.toMillis() : 0;
-      return tb - ta;
-    });
-
-    window.__resultsQuestions = qs;
-    window.__resultsResponses = responses;
-    window.__resultsProgramName = (programs.find(p=>p.id===programId)||{}).name || '';
-
-    summaryEl.innerHTML = `
-      <div class="stat-card">
-        <div class="stat-num">${responses.length}</div>
-        <div class="stat-label">총 응답 수</div>
-      </div>
-    `;
-
-    if(qs.length===0 || responses.length===0){
-      chartsEl.innerHTML = '<div class="empty">아직 표시할 결과가 없습니다.</div>';
-      responsesEl.innerHTML = '';
-      return;
-    }
-
-    chartsEl.innerHTML = qs.map(q=>{
-      if(q.displayType === 'text'){
-        const textAnswers = responses
-          .map(r=> r.answers.find(a=>a.questionId===q.id))
-          .filter(a=> a && a.answer);
-        return `
-          <div class="stat-card">
-            <div style="font-size:14px; font-weight:500; margin-bottom:10px;">${escapeHtml(q.text)} <span style="color:var(--muted); font-weight:400;">(주관식 · 응답 ${textAnswers.length}건)</span></div>
-            ${textAnswers.length===0 ? '<div class="empty">아직 응답이 없습니다.</div>' : textAnswers.map(a=>`
-              <div style="font-size:13px; padding:8px 0; border-top:1px solid var(--border);">${escapeHtml(a.answer)}</div>
-            `).join('')}
-          </div>
-        `;
-      }
-      return `
-      <div class="stat-card">
-        <div style="font-size:14px; font-weight:500; margin-bottom:10px;">${escapeHtml(q.text)}</div>
-        <canvas id="chart-${q.id}" height="140"></canvas>
-      </div>
-    `;
-    }).join('');
-
-    qs.filter(q=> q.displayType !== 'text').forEach(q=>{
-      const counts = q.options.map(opt=>
-        responses.filter(r=> r.answers.some(a=> a.questionId===q.id && a.answer===opt)).length
-      );
-      const ctx = document.getElementById('chart-'+q.id).getContext('2d');
-      const chart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: q.options,
-          datasets: [{ data: counts, backgroundColor: '#2F6F5E', borderRadius: 6 }]
-        },
-        options: {
-          plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-        }
-      });
-      chartInstances.push(chart);
-    });
-
-    renderIndividualResponses();
-  }).catch(err=>{
-    console.error(err);
-    chartsEl.innerHTML = '<div class="empty">결과를 불러오지 못했습니다. 콘솔 오류를 확인해주세요.</div>';
-  });
-}
-
-function formatTimestamp(ts){
-  if(!ts || !ts.toDate) return '-';
-  const d = ts.toDate();
-  const pad = n=> String(n).padStart(2,'0');
-  return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function renderIndividualResponses(){
-  const el = document.getElementById('results-responses');
-  const responses = window.__resultsResponses || [];
-  if(responses.length===0){ el.innerHTML=''; return; }
-
-  el.innerHTML = `
-    <div class="field-label" style="margin-top:20px;">개별 응답 (${responses.length}건)</div>
-    ${responses.map(r=>`
-      <div class="row-item" style="flex-direction:column; align-items:flex-start;">
-        <div style="display:flex; width:100%; justify-content:space-between; align-items:center;">
-          <div class="sub">${formatTimestamp(r.submittedAt)}</div>
-          <div class="row-actions">
-            <button class="danger" onclick="deleteResponse('${r.id}')">삭제</button>
-          </div>
-        </div>
-        <div style="margin-top:8px; width:100%;">
-          ${r.answers.map(a=>`
-            <div style="font-size:13px; padding:4px 0; border-top:1px solid var(--border);">
-              <span style="color:var(--ink-soft);">${escapeHtml(a.questionText)}</span> —
-              <span style="font-weight:500;">${escapeHtml(a.answer)}</span>
-            </div>
-          `).join('')}
-        </div>
-      </div>
-    `).join('')}
-  `;
-}
-
-function deleteResponse(responseId){
-  if(!confirm('이 응답을 휴지통으로 이동할까요? (휴지통에서 복구 가능)')) return;
-  db.collection('responses').doc(responseId).update({ deletedAt: firebase.firestore.FieldValue.serverTimestamp() }).then(()=>{
-    renderResults();
-  });
-}
-
-function exportResultsToExcel(){
-  const qs = window.__resultsQuestions || [];
-  const responses = window.__resultsResponses || [];
-  const programName = window.__resultsProgramName || '프로그램';
-
-  if(qs.length===0 || responses.length===0){
-    alert('내보낼 결과가 없습니다.');
-    return;
-  }
-
-  // Sheet 1: 문항별 보기 분포 (주관식 문항은 개별 응답 시트에서 확인)
-  const summaryRows = [['문항','보기','응답 수']];
-  qs.filter(q=> q.displayType !== 'text').forEach(q=>{
-    q.options.forEach(opt=>{
-      const count = responses.filter(r=> r.answers.some(a=> a.questionId===q.id && a.answer===opt)).length;
-      summaryRows.push([q.text, opt, count]);
-    });
-  });
-
-  // Sheet 2: 응답별 원자료 (행 = 응답 1건, 열 = 문항)
-  const header = ['제출일시', ...qs.map(q=>q.text)];
-  const rawRows = [header];
-  responses.forEach(r=>{
-    const row = [formatTimestamp(r.submittedAt)];
-    qs.forEach(q=>{
-      const ans = r.answers.find(a=>a.questionId===q.id);
-      row.push(ans ? ans.answer : '');
-    });
-    rawRows.push(row);
-  });
-
-  const wb = XLSX.utils.book_new();
-  const ws1 = XLSX.utils.aoa_to_sheet(summaryRows);
-  const ws2 = XLSX.utils.aoa_to_sheet(rawRows);
-  XLSX.utils.book_append_sheet(wb, ws1, '통계 요약');
-  XLSX.utils.book_append_sheet(wb, ws2, '개별 응답');
-
-  const fileName = `${programName}_만족도결과.xlsx`;
-  XLSX.writeFile(wb, fileName);
-}
-
-/* ---------------- ADMIN: share ---------------- */
-function renderShare(){
-  const url = window.location.origin + window.location.pathname;
-  document.getElementById('share-url').value = url;
-  document.getElementById('qr-img').src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
-}
-
-function copyShareUrl(){
-  const input = document.getElementById('share-url');
-  input.select();
-  document.execCommand('copy');
-}
-
-/* ---------------- ADMIN: trash ---------------- */
-function renderTrash(){
-  const el = document.getElementById('trash-list');
-  el.innerHTML = '<div class="empty">불러오는 중...</div>';
-
-  Promise.all([
-    db.collection('programs').get(),
-    db.collection('questions').get(),
-    db.collection('responses').get()
-  ]).then(([pSnap, qSnap, rSnap])=>{
-    const items = [];
-    pSnap.forEach(d=>{
-      const data = d.data();
-      if(data.deletedAt) items.push({ type:'program', id:d.id, label: data.name, deletedAt: data.deletedAt });
-    });
-    qSnap.forEach(d=>{
-      const data = d.data();
-      if(data.deletedAt){
-        const progName = (window.__allPrograms||[]).find(p=>p.id===data.programId);
-        items.push({ type:'question', id:d.id, label: data.text, sub: progName ? `[${progName.name}]` : '', deletedAt: data.deletedAt });
-      }
-    });
-    rSnap.forEach(d=>{
-      const data = d.data();
-      if(data.deletedAt) items.push({ type:'response', id:d.id, label: `${data.programName||'응답'} · ${formatTimestamp(data.submittedAt)} 제출`, deletedAt: data.deletedAt });
-    });
-
-    items.sort((a,b)=>{
-      const ta = a.deletedAt && a.deletedAt.toMillis ? a.deletedAt.toMillis() : 0;
-      const tb = b.deletedAt && b.deletedAt.toMillis ? b.deletedAt.toMillis() : 0;
-      return tb - ta;
-    });
-
-    if(items.length===0){ el.innerHTML = '<div class="empty">휴지통이 비어 있습니다.</div>'; return; }
-
-    const typeLabel = { program:'프로그램', question:'문항', response:'응답' };
-    el.innerHTML = items.map(it=>`
-      <div class="row-item">
-        <div>
-          <div class="title">[${typeLabel[it.type]}] ${escapeHtml(it.label)} ${it.sub?escapeHtml(it.sub):''}</div>
-          <div class="sub">삭제일: ${formatTimestamp(it.deletedAt)}</div>
-        </div>
-        <div class="row-actions">
-          <button onclick="restoreTrashItem('${it.type}','${it.id}')">복구</button>
-          <button class="danger" onclick="permanentlyDeleteTrashItem('${it.type}','${it.id}')">완전삭제</button>
-        </div>
-      </div>
-    `).join('');
-  }).catch(err=>{
-    console.error(err);
-    el.innerHTML = '<div class="empty">휴지통을 불러오지 못했습니다. 콘솔 오류를 확인해주세요.</div>';
-  });
-}
-
-function restoreTrashItem(type, id){
-  const coll = type==='program' ? 'programs' : type==='question' ? 'questions' : 'responses';
-  db.collection(coll).doc(id).update({
-    deletedAt: firebase.firestore.FieldValue.delete()
-  }).then(()=>{
-    renderTrash();
-  });
-}
-
-function permanentlyDeleteTrashItem(type, id){
-  if(!confirm('완전히 삭제하면 복구할 수 없습니다. 계속할까요?')) return;
-  const coll = type==='program' ? 'programs' : type==='question' ? 'questions' : 'responses';
-  db.collection(coll).doc(id).delete().then(()=>{
-    renderTrash();
-  });
-}
-
-/* ---------------- utils ---------------- */
-function escapeHtml(str){
-  return String(str).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-}
-function escapeAttr(str){
-  return String(str).replace(/'/g, "\\'");
-}
-
-/* ---------------- init ---------------- */
-loadPrograms();
+const fmt = r => { const d = r.createdAt?.toDate ? r.createdAt.toDate() : new Date(r.clientTime);
+  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; };
+window.downloadCSV = () => {
+  const head=["번호","참여시각","소속","학번/사번","이름","점수","응답(Q1-Q5)",...QUIZ.map((_,i)=>`Q${i+1}정오`),"만족도1","만족도2","만족도3"];
+  const body=rows.map((r,i)=>[i+1,fmt(r),r.dept,r.sid,r.name,r.score,r.answers,...r.correct,r.sat1,r.sat2,r.sat3]);
+  const csv="\uFEFF"+[head,...body].map(a=>a.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download=`정신건강의날_OX퀴즈_참여자_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+};
+if(location.hash==="#admin") openAdmin();
+window.addEventListener("hashchange",()=>{ if(location.hash==="#admin") openAdmin(); });
 </script>
 </body>
 </html>
